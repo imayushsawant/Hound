@@ -491,6 +491,7 @@ test("job boards CRUD operations and due status derivation", () => {
         url: b1.url || "",
         frequency: b1.check_every_days,
         checked: b1.last_checked_at || "",
+        color: "#798d62",
       }),
       true,
     );
@@ -516,6 +517,7 @@ test("job boards CRUD operations and due status derivation", () => {
         url: updated.url || "",
         frequency: updated.check_every_days,
         checked: updated.last_checked_at || "",
+        color: "#798d62",
       }),
       false,
     );

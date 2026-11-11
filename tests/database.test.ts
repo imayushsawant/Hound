@@ -42,7 +42,7 @@ test("numbered migrations run in numeric order and are idempotent", () => {
     assert.equal(migrate(f.database, f.directory), 10);
     assert.equal(migrate(f.database, f.directory), 10);
     assert.equal(
-      f.database.prepare("SELECT count(*) AS count FROM schema_migrations").get().count,
+      (f.database.prepare("SELECT count(*) AS count FROM schema_migrations").get() as { count: number }).count,
       3,
     );
     const columns = f.database.pragma("table_info(companies)") as { name: string }[];
@@ -68,7 +68,7 @@ test("failed pending migrations roll back without changing existing records", ()
       undefined,
     );
     assert.equal(
-      f.database.prepare("SELECT count(*) AS count FROM schema_migrations").get().count,
+      (f.database.prepare("SELECT count(*) AS count FROM schema_migrations").get() as { count: number }).count,
       1,
     );
   } finally {
@@ -117,7 +117,10 @@ test("schema requires company, role, and status but supports multiple applicatio
     assert.throws(() => insert.run(1, "", "Applied"));
     assert.throws(() => insert.run(1, "Engineer", ""));
     assert.throws(() => insert.run(1, null, "Applied"));
-    assert.equal(f.database.prepare("SELECT count(*) AS count FROM applications").get().count, 2);
+    assert.equal(
+      (f.database.prepare("SELECT count(*) AS count FROM applications").get() as { count: number }).count,
+      2,
+    );
   } finally {
     f.close();
   }
@@ -135,9 +138,9 @@ test("repository creates a persistent database and broadcasts only after success
     assert.equal(changes, 1);
     repository.close();
     const persisted = new Database(join(userData, "nudge.db"));
-    assert.equal(persisted.pragma("foreign_key_check").length, 0);
+    assert.equal((persisted.pragma("foreign_key_check") as unknown[]).length, 0);
     assert.equal(
-      persisted.prepare("SELECT count(*) AS count FROM schema_migrations").get().count,
+      (persisted.prepare("SELECT count(*) AS count FROM schema_migrations").get() as { count: number }).count,
       1,
     );
     persisted.close();
