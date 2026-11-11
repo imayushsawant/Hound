@@ -3481,3 +3481,230 @@ kbd {
     scroll-behavior: auto !important;
   }
 }
+
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text-dark);
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 36px 48px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.loading-card h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-deep);
+}
+
+.loading-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #e5885e;
+    --accent-dark: #cc724c;
+    --muted: #8c9783;
+    --border: #2a3124;
+    --ink: #e3e6de;
+    --green: #67a683;
+  }
+
+  body, html, #root, .loading-screen {
+    background-color: #121511 !important;
+    color: #e2e5dd !important;
+  }
+
+  .sidebar {
+    background: #171b15 !important;
+    border-color: #272d22 !important;
+  }
+
+  .brand > span {
+    color: #eceee8 !important;
+  }
+
+  .nav-item {
+    color: #9aa591 !important;
+  }
+
+  .nav-item:hover {
+    color: #eceee8 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .nav-item.active {
+    color: #eceee8 !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .topbar {
+    background: rgba(18, 21, 17, 0.85) !important;
+    border-color: #272d22 !important;
+  }
+
+  .topbar-search input {
+    background: #1c211a !important;
+    border-color: #2e3727 !important;
+    color: #eceee8 !important;
+  }
+
+  .content-card,
+  .table-card,
+  .side-panel,
+  .timeline-round-item,
+  .detail-page,
+  .board-card,
+  .empty-state,
+  .info-banner,
+  .loading-card {
+    background: #181d16 !important;
+    border-color: #283023 !important;
+    color: #e2e5dd !important;
+  }
+
+  .board-card-name h3,
+  .page-heading h1,
+  .detail-heading h1,
+  .card-heading h2,
+  h1, h2, h3, h4 {
+    color: #f1f3ee !important;
+  }
+
+  .muted,
+  .small,
+  .side-subtitle,
+  .stat-label,
+  .eyebrow {
+    color: #8c9883 !important;
+  }
+
+  table thead th {
+    background: #151a13 !important;
+    color: #8c9883 !important;
+    border-color: #283023 !important;
+  }
+
+  table tbody tr {
+    border-color: #232a1e !important;
+  }
+
+  table tbody tr:hover {
+    background: #1e241b !important;
+  }
+
+  input,
+  select,
+  textarea {
+    background: #1e241c !important;
+    border-color: #323c2b !important;
+    color: #eceee8 !important;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #557241 !important;
+  }
+
+  .button.secondary {
+    background: #21271e !important;
+    border-color: #323d2b !important;
+    color: #dbe2d6 !important;
+  }
+
+  .button.secondary:hover {
+    background: #2a3326 !important;
+    color: #ffffff !important;
+  }
+
+  .button.primary {
+    background: #466034 !important;
+    color: #ffffff !important;
+  }
+
+  .button.primary:hover {
+    background: #54733e !important;
+  }
+
+  .modal-backdrop {
+    background: rgba(0, 0, 0, 0.72) !important;
+  }
+
+  .modal {
+    background: #1a1f18 !important;
+    border-color: #333d2c !important;
+    color: #e2e5dd !important;
+  }
+
+  .note-editor-wrapper {
+    background: #131711 !important;
+    border-color: #283023 !important;
+  }
+
+  .cm-editor {
+    background: #131711 !important;
+    color: #e2e5dd !important;
+  }
+
+  .cm-content {
+    caret-color: #e5885e !important;
+  }
+
+  .cm-gutters {
+    background: #171b14 !important;
+    border-color: #283023 !important;
+    color: #637059 !important;
+  }
+
+  .markdown-body {
+    color: #dbe2d6 !important;
+  }
+
+  .markdown-body pre,
+  .markdown-body code {
+    background: #1e241b !important;
+    color: #f1f3ee !important;
+  }
+
+  .tag-pill,
+  .topic-tag {
+    background: #22291d !important;
+    border-color: #323d2b !important;
+    color: #c9d4c2 !important;
+  }
+
+  .stage-badge {
+    background: #232b1d !important;
+    border-color: #323d2b !important;
+  }
+
+  .saved-badge {
+    background: #1c271a !important;
+    border-color: #2b3e27 !important;
+    color: #79a66d !important;
+  }
+
+  .profile-avatar {
+    background: #2b3325 !important;
+    color: #eceee8 !important;
+    border-color: #384531 !important;
+  }
+}

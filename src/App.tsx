@@ -210,12 +210,24 @@ function App() {
   }, [toast]);
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          (target as any).isContentEditable);
+
       if (
         (e.ctrlKey && e.key.toLowerCase() === "n" && !e.shiftKey && !e.altKey && !e.metaKey) ||
         (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j")
       ) {
         e.preventDefault();
         setModal("application");
+      }
+      if (!isInput && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
+        e.preventDefault();
+        setModal("help");
       }
       if (e.key === "Escape") {
         setModal(null);
@@ -495,6 +507,18 @@ function App() {
           notes: "",
         }
       : null;
+
+  if (!ready) {
+    return (
+      <div className="loading-screen" role="status" aria-live="polite">
+        <div className="loading-card">
+          <HoundMark size={44} />
+          <h2>Hound</h2>
+          <p>Opening your workspace...</p>
+        </div>
+      </div>
+    );
+  }
 
   const addButton = (
     <button
@@ -1243,6 +1267,16 @@ function App() {
             </span>
           </div>
           <div className="shortcut-row">
+            <span>Toggle notes edit / preview</span>
+            <span>
+              <kbd>Ctrl</kbd> + <kbd>E</kbd>
+            </span>
+          </div>
+          <div className="shortcut-row">
+            <span>Show keyboard shortcuts</span>
+            <kbd>?</kbd>
+          </div>
+          <div className="shortcut-row">
             <span>Close dialogs and menus</span>
             <kbd>Esc</kbd>
           </div>
@@ -1863,15 +1897,17 @@ function Empty({
   title,
   description,
   action,
+  icon,
 }: {
   title: string;
   description: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="empty-state">
       <span className="empty-icon">
-        <BriefcaseBusiness size={24} />
+        {icon || <BriefcaseBusiness size={24} />}
       </span>
       <h3>{title}</h3>
       <p>{description}</p>
