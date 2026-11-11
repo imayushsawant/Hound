@@ -15,6 +15,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { channels, type AppInfo } from "../../src/shared/api";
 import { Repository } from "./db/repository";
+import { registerDataIpcHandlers } from "./ipc";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rendererFile = join(here, "../renderer/index.html");
@@ -116,6 +117,7 @@ app
         database: { ready: true, schemaVersion: repository!.schemaVersion },
       };
     });
+    registerDataIpcHandlers(ipcMain, repository!, trusted);
     ipcMain.handle("workspace:load", (event) => {
       trusted(event);
       return repository!.loadWorkspace();
