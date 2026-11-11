@@ -1,7 +1,11 @@
 import { spawnSync } from "node:child_process";
 import electron from "electron";
 
-const testFiles = ["tests/database.test.ts", "tests/data_layer.test.ts"];
+const testFiles = [
+  "tests/database.test.ts",
+  "tests/data_layer.test.ts",
+  "tests/integration_audit.test.ts",
+];
 const runner = process.env.TEST_WITH_ELECTRON ? electron : process.execPath;
 const result = spawnSync(
   runner,
