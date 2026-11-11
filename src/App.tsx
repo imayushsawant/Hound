@@ -76,6 +76,7 @@ import {
   type Store,
 } from "./data";
 import { NoteEditor } from "./NoteEditor";
+import { QuickAdd } from "./QuickAdd";
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
@@ -129,6 +130,11 @@ const dueApplications = (s: Store) =>
   );
 
 function App() {
+  const isQuickAdd = window.location.hash.toLowerCase() === "#quick-add";
+  if (isQuickAdd) {
+    return <QuickAdd />;
+  }
+
   const [store, setStore] = useState<Store>(readStore);
   const [ready, setReady] = useState(!window.houndDesktop);
   const [page, setPage] = useState<Page>("Overview");

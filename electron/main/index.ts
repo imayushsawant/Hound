@@ -24,6 +24,7 @@ const devURL = process.env.ELECTRON_RENDERER_URL;
 let repository: Repository | undefined;
 let scheduler: Scheduler | undefined;
 let mainWindow: BrowserWindow | undefined;
+let quickAddWindow: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let quitting = false;
 
@@ -43,6 +44,53 @@ function showWindow(quickAdd = false) {
   mainWindow!.show();
   mainWindow!.focus();
   if (quickAdd) mainWindow!.webContents.send("desktop:quick-add");
+}
+
+function openQuickAddWindow() {
+  if (quickAddWindow && !quickAddWindow.isDestroyed()) {
+    quickAddWindow.show();
+    quickAddWindow.focus();
+    return;
+  }
+
+  const win = new BrowserWindow({
+    width: 440,
+    height: 280,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    show: false,
+    skipTaskbar: true,
+    backgroundColor: "#fafbf9",
+    webPreferences: {
+      preload: join(here, "../preload/index.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+    },
+  });
+
+  quickAddWindow = win;
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  win.on("closed", () => {
+    quickAddWindow = undefined;
+  });
+
+  const targetUrl = devURL
+    ? `${devURL}#quick-add`
+    : `${pathToFileURL(rendererFile).href}#quick-add`;
+  void win.loadURL(targetUrl);
+
+  win.once("ready-to-show", () => {
+    win.show();
+    win.focus();
+  });
 }
 
 function focusApp(route?: string) {
@@ -153,6 +201,12 @@ app
       if (Notification.isSupported())
         new Notification({ title, body, icon: join(here, "../renderer/hound.png") }).show();
     });
+    ipcMain.on("quick-add:close", (event) => {
+      trusted(event);
+      if (quickAddWindow && !quickAddWindow.isDestroyed()) {
+        quickAddWindow.close();
+      }
+    });
     createWindow();
     scheduler = new Scheduler(repository!, {
       onFocusApp: (route) => focusApp(route),
@@ -170,7 +224,7 @@ app
         {
           label: "Quick Add",
           accelerator: "CommandOrControl+Shift+J",
-          click: () => showWindow(true),
+          click: () => openQuickAddWindow(),
         },
         { type: "separator" },
         {
@@ -184,7 +238,7 @@ app
     );
     tray.on("click", () => showWindow());
     tray.on("double-click", () => showWindow());
-    globalShortcut.register("CommandOrControl+Shift+J", () => showWindow(true));
+    globalShortcut.register("CommandOrControl+Shift+J", () => openQuickAddWindow());
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

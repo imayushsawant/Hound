@@ -12,6 +12,7 @@ declare global {
       onQuickAdd: (callback: () => void) => () => void;
       onDataChanged: (callback: () => void) => () => void;
       onNavigateRoute?: (callback: (route: string) => void) => () => void;
+      closeQuickAdd?: () => void;
     };
   }
 }
