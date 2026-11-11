@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Repository, deriveNextAction } from "../electron/main/db/repository.ts";
@@ -628,6 +628,32 @@ test("settings defaults and persistence for launchOnLogin, followUpDays, and sch
     assert.equal(reloaded.settings.launchOnLogin, false);
     assert.equal(reloaded.settings.followUpDays, 14);
     assert.equal(reloaded.settings.schedulerEnabled, false);
+  } finally {
+    fixture.close();
+  }
+});
+
+test("automatic daily SQLite backup creates file and retains maximum 7 backups", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+    const backupPath = repo.performDailyBackup();
+    assert.ok(backupPath);
+    assert.ok(existsSync(backupPath));
+
+    const backupsDir = join(repo.userData, "backups");
+    assert.ok(existsSync(backupsDir));
+
+    // Simulate 10 older backups
+    for (let i = 1; i <= 10; i++) {
+      const day = String(i).padStart(2, "0");
+      writeFileSync(join(backupsDir, `hound-backup-2026-10-${day}.db`), "dummy-db");
+    }
+
+    // Call performDailyBackup again -> should prune down to 7
+    repo.performDailyBackup();
+    const files = readdirSync(backupsDir).filter((f) => f.endsWith(".db"));
+    assert.equal(files.length, 7);
   } finally {
     fixture.close();
   }

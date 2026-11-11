@@ -13,6 +13,7 @@ declare global {
       onDataChanged: (callback: () => void) => () => void;
       onNavigateRoute?: (callback: (route: string) => void) => () => void;
       closeQuickAdd?: () => void;
+      openDataFolder?: () => Promise<boolean>;
     };
   }
 }

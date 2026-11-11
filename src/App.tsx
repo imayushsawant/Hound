@@ -28,6 +28,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  FolderOpen,
   Globe,
   HelpCircle,
   LayoutDashboard,
@@ -3843,6 +3844,25 @@ function Settings({
               accept=".json,application/json"
               onChange={(e) => importData(e.target.files?.[0])}
             />
+          </div>
+          <div className="settings-row">
+            <div>
+              <h3>Data directory</h3>
+              <p>Direct access to your SQLite database and automatic 7-day backups.</p>
+            </div>
+            <button
+              className="button secondary"
+              onClick={() => {
+                if (window.houndDesktop?.openDataFolder) {
+                  window.houndDesktop.openDataFolder();
+                } else {
+                  notify("Data folder access is available in the desktop app.", true);
+                }
+              }}
+            >
+              <FolderOpen size={15} />
+              Open data folder
+            </button>
           </div>
           <div className="settings-row">
             <div>

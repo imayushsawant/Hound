@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { migrate } from "./migrate.ts";
 import { validStore, type Store, type Application as WorkspaceApplication, type Round as WorkspaceRound } from "../../../src/data.ts";
@@ -90,9 +90,11 @@ export function deriveNextAction(
 export class Repository {
   readonly #database: Database.Database;
   readonly #notify: () => void;
+  readonly #userData: string;
   readonly schemaVersion: number;
 
   constructor(userData: string, migrations: string, notify: () => void) {
+    this.#userData = userData;
     mkdirSync(userData, { recursive: true });
     this.#database = new Database(join(userData, "nudge.db"));
     this.#notify = notify;
@@ -825,6 +827,47 @@ export class Repository {
         .run(JSON.stringify(data.settings));
     });
     return this.loadWorkspace();
+  }
+
+  get userData(): string {
+    return this.#userData;
+  }
+
+  performDailyBackup(): string | null {
+    const today = new Date().toISOString().slice(0, 10);
+    const backupsDir = join(this.#userData, "backups");
+    mkdirSync(backupsDir, { recursive: true });
+
+    const backupFile = join(backupsDir, `hound-backup-${today}.db`);
+    if (!existsSync(backupFile)) {
+      try {
+        this.#database.prepare("VACUUM INTO ?").run(backupFile);
+      } catch {
+        try {
+          copyFileSync(join(this.#userData, "nudge.db"), backupFile);
+        } catch (e) {
+          console.error("Backup failed:", e);
+        }
+      }
+    }
+
+    try {
+      const files = readdirSync(backupsDir)
+        .filter((f) => f.endsWith(".db"))
+        .sort();
+      while (files.length > 7) {
+        const oldest = files.shift();
+        if (oldest) {
+          try {
+            unlinkSync(join(backupsDir, oldest));
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.error("Could not prune old backups:", e);
+    }
+
+    return backupFile;
   }
 
   close() {

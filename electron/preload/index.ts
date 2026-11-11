@@ -74,4 +74,5 @@ contextBridge.exposeInMainWorld("houndDesktop", {
     return () => ipcRenderer.removeListener("navigate:route", handler);
   },
   closeQuickAdd: () => ipcRenderer.send("quick-add:close"),
+  openDataFolder: () => ipcRenderer.invoke("desktop:open-data-folder"),
 });

@@ -215,6 +215,12 @@ if (!gotLock) {
         quickAddWindow.close();
       }
     });
+    ipcMain.handle("desktop:open-data-folder", (event) => {
+      trusted(event);
+      void shell.openPath(app.getPath("userData"));
+      return true;
+    });
+    void repository.performDailyBackup();
     createWindow();
     scheduler = new Scheduler(repository!, {
       onFocusApp: (route) => focusApp(route),

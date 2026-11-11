@@ -101,6 +101,7 @@ export class Scheduler {
   }
 
   check(): { boardsCount: number; followupsCount: number; roundsCount: number } {
+    void this.#repository.performDailyBackup();
     let boardsCount = 0;
     let followupsCount = 0;
     let roundsCount = 0;
