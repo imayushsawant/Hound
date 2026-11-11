@@ -55,6 +55,7 @@ const api: NudgeAPI = {
   deleteBoard: (id: number) => ipcRenderer.invoke(channels.boardsDelete, id),
 };
 
+contextBridge.exposeInMainWorld("hound", api);
 contextBridge.exposeInMainWorld("nudge", api);
 
 contextBridge.exposeInMainWorld("houndDesktop", {

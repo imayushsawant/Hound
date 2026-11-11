@@ -201,7 +201,7 @@ export interface AppInfo {
   database: { ready: true; schemaVersion: number };
 }
 
-export interface NudgeAPI {
+export interface HoundAPI {
   getAppInfo(): Promise<AppInfo>;
   onDataChanged(listener: () => void): () => void;
 
@@ -233,3 +233,5 @@ export interface NudgeAPI {
   updateBoard(id: number, input: UpdateBoardInput): Promise<Board>;
   deleteBoard(id: number): Promise<boolean>;
 }
+
+export type NudgeAPI = HoundAPI;

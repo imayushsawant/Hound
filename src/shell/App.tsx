@@ -54,7 +54,7 @@ function Sidebar() {
       <NavLink to="/" className="nudge-brand" aria-label="Nudge dashboard">
         <NudgeMark />
         <span>
-          nudge<span className="brand-dot">.</span>
+          hound<span className="brand-dot">.</span>
         </span>
       </NavLink>
       <div className="personal-workspace">
@@ -119,7 +119,7 @@ function Sidebar() {
 
 function Shell() {
   useEffect(() => {
-    document.title = "Nudge — Your next chapter";
+    document.title = "Hound — Your next chapter";
     document.documentElement.lang = "en";
   }, []);
   const location = useLocation();

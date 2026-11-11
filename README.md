@@ -92,9 +92,9 @@ The resulting installer (`Hound Setup 1.0.0.exe`) will be generated inside the `
 
 Hound stores all records inside an embedded SQLite database using WAL (Write-Ahead Logging) mode and foreign key constraints:
 
-- **Windows**: `%APPDATA%\Hound\nudge.db`
-- **macOS**: `~/Library/Application Support/Hound/nudge.db`
-- **Linux**: `~/.config/Hound/nudge.db`
+- **Windows**: `%APPDATA%\Hound\hound.db` (or `nudge.db`)
+- **macOS**: `~/Library/Application Support/Hound/hound.db` (or `nudge.db`)
+- **Linux**: `~/.config/Hound/hound.db` (or `nudge.db`)
 
 > **Tip**: You can open this directory directly from the app by going to **Settings** → **Open data folder**.
 
@@ -124,6 +124,6 @@ Hound performs an automated SQLite snapshot on startup and during regular 15-min
 
 - `electron/main/`: Electron lifecycle, single-instance lock, tray, global shortcuts, IPC handlers, scheduler, and SQLite repository.
 - `electron/main/db/`: SQLite connection (`better-sqlite3`), transaction-safe queries, numbered idempotent migrations, and automated backups.
-- `electron/preload/`: Context-isolated, narrow typed IPC bridges (`window.houndDesktop` and `window.nudge`).
+- `electron/preload/`: Context-isolated, narrow typed IPC bridges (`window.houndDesktop`, `window.hound`, and `window.nudge`).
 - `src/`: React frontend with full keyboard navigation, CodeMirror 6 markdown editor, dark mode theme styles, and zero direct Node/SQLite access.
 - `tests/`: Automated unit tests testing native SQLite behaviors, auto-advancing stages, reminders, and daily backup retention.

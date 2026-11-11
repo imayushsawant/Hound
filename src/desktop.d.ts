@@ -1,8 +1,9 @@
-import type { NudgeAPI } from "./shared/api";
+import type { HoundAPI, NudgeAPI } from "./shared/api";
 
 export {};
 declare global {
   interface Window {
+    hound?: HoundAPI;
     nudge?: NudgeAPI;
     houndDesktop?: {
       load: () => Promise<unknown>;
