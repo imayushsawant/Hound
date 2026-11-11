@@ -1,4 +1,4 @@
-# Nudge: Spec
+# Hound: Spec
 
 ## Dashboard
 Active applications table: company, role, stage, next action, applied date, last updated. Sortable, filterable by stage, searchable. Inline stage change.
