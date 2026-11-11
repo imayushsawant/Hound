@@ -82,6 +82,21 @@ export const isoDate = (offset = 0) => {
   d.setDate(d.getDate() + offset);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+export function formatExternalUrl(raw?: string | null): string {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+export function safeHostname(raw?: string | null): string {
+  if (!raw) return "";
+  try {
+    const formatted = formatExternalUrl(raw);
+    return new URL(formatted).hostname;
+  } catch {
+    return raw;
+  }
+}
 export const formatDate = (value: string, options?: Intl.DateTimeFormatOptions) =>
   value
     ? new Date(value.length === 10 ? `${value}T12:00:00` : value).toLocaleDateString(
@@ -463,5 +478,9 @@ export function validStore(data: unknown): data is Store {
     return false;
   }
 }
-export const boardDue = (b: Board) =>
-  Date.now() - new Date(b.checked).getTime() >= b.frequency * 86400000;
+export const boardDue = (b: Board) => {
+  if (!b.checked) return true;
+  const time = new Date(b.checked).getTime();
+  if (isNaN(time)) return true;
+  return Date.now() - time >= b.frequency * 86400000;
+};

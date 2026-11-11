@@ -35,6 +35,7 @@ import {
   MapPin,
   Monitor,
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Settings2,
@@ -56,12 +57,14 @@ import {
   deriveClientNextAction,
   followUpDate,
   formatDate,
+  formatExternalUrl,
   isActive,
   isoDate,
   nextAction,
   readStore,
   relativeLastUpdated,
   roundTypes,
+  safeHostname,
   stages,
   uid,
   validStore,
@@ -124,6 +127,7 @@ function App() {
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [activeNoteRoute, setActiveNoteRoute] = useState<NoteRoute>(null);
+  const [editingBoard, setEditingBoard] = useState<Board | null>(null);
   const [modal, setModal] = useState<Modal>(null);
   const [newCompany, setNewCompany] = useState("");
   const [query, setQuery] = useState("");
@@ -349,12 +353,99 @@ function App() {
     setActiveNoteRoute({ applicationId, roundId, type });
     window.location.hash = `/applications/${applicationId}/rounds/${roundId}/${type}`;
   };
-  const checkBoard = (id: string) => {
+  const checkBoard = (id: string, openUrl = false) => {
+    const b = store.boards.find((x) => x.id === id);
+    if (!b) return;
+    const nowIso = new Date().toISOString();
+    if (openUrl && b.url) {
+      window.open(formatExternalUrl(b.url), "_blank");
+    }
     setStore((s) => ({
       ...s,
-      boards: s.boards.map((b) => (b.id === id ? { ...b, checked: new Date().toISOString() } : b)),
+      boards: s.boards.map((item) => (item.id === id ? { ...item, checked: nowIso } : item)),
     }));
-    notify("Checked off. One small step forward.");
+    const numId = Number(id);
+    if (!isNaN(numId) && window.nudge?.updateBoard) {
+      void window.nudge.updateBoard(numId, { last_checked_at: nowIso });
+    }
+    notify(openUrl ? `Opened and marked ${b.name} checked.` : `Marked ${b.name} checked.`);
+  };
+
+  const handleSaveBoard = async (data: { id?: string; name: string; url: string; frequency: number }) => {
+    if (data.id) {
+      const numId = Number(data.id);
+      if (!isNaN(numId) && window.nudge?.updateBoard) {
+        await window.nudge.updateBoard(numId, {
+          name: data.name,
+          url: data.url || null,
+          check_every_days: data.frequency,
+        });
+      }
+      setStore((s) => ({
+        ...s,
+        boards: s.boards.map((b) =>
+          b.id === data.id
+            ? { ...b, name: data.name, url: data.url, frequency: data.frequency }
+            : b,
+        ),
+      }));
+      notify(`Updated ${data.name}.`);
+    } else {
+      const nowIso = new Date().toISOString();
+      if (window.nudge?.createBoard) {
+        const created = await window.nudge.createBoard({
+          name: data.name,
+          url: data.url || null,
+          check_every_days: data.frequency,
+          last_checked_at: nowIso,
+        });
+        setStore((s) => ({
+          ...s,
+          boards: [
+            ...s.boards,
+            {
+              id: String(created.id),
+              name: created.name,
+              url: created.url || "",
+              frequency: created.check_every_days,
+              checked: created.last_checked_at || nowIso,
+              color: "#cf7048",
+            },
+          ],
+        }));
+      } else {
+        setStore((s) => ({
+          ...s,
+          boards: [
+            ...s.boards,
+            {
+              id: uid(),
+              name: data.name,
+              url: data.url,
+              frequency: data.frequency,
+              checked: nowIso,
+              color: "#cf7048",
+            },
+          ],
+        }));
+      }
+      notify("Job board added to your radar.");
+    }
+    setModal(null);
+    setEditingBoard(null);
+  };
+
+  const handleDeleteBoard = async (id: string, name: string) => {
+    if (!confirm(`Remove ${name} from your job boards?`)) return;
+    const numId = Number(id);
+    if (!isNaN(numId) && window.nudge?.deleteBoard) {
+      await window.nudge.deleteBoard(numId);
+    }
+    setStore((s) => ({
+      ...s,
+      boards: s.boards.filter((x) => x.id !== id),
+    }));
+    notify(`Removed ${name}.`);
   };
   const reminderCount = dueApplications(store).length + store.boards.filter(boardDue).length;
   const app = store.applications.find((a) => a.id === selectedApp);
@@ -909,7 +1000,13 @@ function App() {
                     title="Keep an eye out"
                     description="Your favorite job boards, with a gentle nudge to check in."
                     action={
-                      <button className="button primary" onClick={() => setModal("board")}>
+                      <button
+                        className="button primary"
+                        onClick={() => {
+                          setEditingBoard(null);
+                          setModal("board");
+                        }}
+                      >
                         <Plus size={16} />
                         Add job board
                       </button>
@@ -925,80 +1022,126 @@ function App() {
                     </div>
                   </div>
                   <div className="board-list">
-                    {store.boards.map((b) => (
-                      <div className="board-card" key={b.id}>
-                        <span className="board-letter" style={{ background: b.color }}>
-                          {b.name === "LinkedIn" ? "in" : b.name.charAt(0)}
-                        </span>
-                        <div className="board-card-name">
-                          <h3>
-                            {b.name}
-                            <a
-                              href={b.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label={`Open ${b.name}`}
+                    {store.boards.map((b) => {
+                      const isDue = boardDue(b);
+                      return (
+                        <div className={`board-card ${isDue ? "board-card-due" : ""}`} key={b.id}>
+                          <span className="board-letter" style={{ background: b.color || "#798d62" }}>
+                            {b.name === "LinkedIn" ? "in" : b.name.charAt(0)}
+                          </span>
+                          <div className="board-card-name">
+                            <h3>
+                              {b.name}
+                              {b.url && (
+                                <a
+                                  href={formatExternalUrl(b.url)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Open ${b.name}`}
+                                >
+                                  <ExternalLink size={14} />
+                                </a>
+                              )}
+                            </h3>
+                            <span>{safeHostname(b.url) || "No URL specified"}</span>
+                          </div>
+                          <label className="board-frequency">
+                            Check every
+                            <select
+                              aria-label={`Check frequency for ${b.name}`}
+                              value={b.frequency}
+                              onChange={(e) => {
+                                const newFreq = +e.target.value;
+                                handleSaveBoard({
+                                  id: b.id,
+                                  name: b.name,
+                                  url: b.url,
+                                  frequency: newFreq,
+                                });
+                              }}
                             >
-                              <ExternalLink size={14} />
-                            </a>
-                          </h3>
-                          <span>{new URL(b.url).hostname}</span>
+                              {[1, 2, 3, 5, 7, 14, 30].map((n) => (
+                                <option key={n} value={n}>
+                                  {n === 1 ? "day" : `${n} days`}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <div className="board-last">
+                            <span>Last checked</span>
+                            <strong>{formatDate(b.checked)}</strong>
+                          </div>
+                          <span className={`due-label ${isDue ? "is-due" : ""}`}>
+                            <span />
+                            {isDue ? "Check-in due" : "Up to date"}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                            {b.url ? (
+                              <button
+                                className="button primary"
+                                onClick={() => checkBoard(b.id, true)}
+                                title="Open URL in system browser and mark checked"
+                                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                              >
+                                <ExternalLink size={14} />
+                                Open and mark checked
+                              </button>
+                            ) : (
+                              <button
+                                className="button secondary"
+                                onClick={() => checkBoard(b.id, false)}
+                                title="Mark checked"
+                              >
+                                <Check size={14} />
+                                Mark checked
+                              </button>
+                            )}
+                            {b.url && (
+                              <button
+                                className="icon-button"
+                                title="Mark checked without opening"
+                                aria-label="Mark checked without opening"
+                                onClick={() => checkBoard(b.id, false)}
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+                            <button
+                              className="icon-button"
+                              title={`Edit ${b.name}`}
+                              aria-label={`Edit ${b.name}`}
+                              onClick={() => {
+                                setEditingBoard(b);
+                                setModal("board");
+                              }}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              className="icon-button danger-hover"
+                              aria-label={`Remove ${b.name}`}
+                              title={`Remove ${b.name}`}
+                              onClick={() => handleDeleteBoard(b.id, b.name)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
                         </div>
-                        <label className="board-frequency">
-                          Check every
-                          <select
-                            aria-label={`Check frequency for ${b.name}`}
-                            value={b.frequency}
-                            onChange={(e) =>
-                              setStore((s) => ({
-                                ...s,
-                                boards: s.boards.map((x) =>
-                                  x.id === b.id ? { ...x, frequency: +e.target.value } : x,
-                                ),
-                              }))
-                            }
-                          >
-                            {[1, 2, 3, 7, 14].map((n) => (
-                              <option key={n} value={n}>
-                                {n === 1 ? "day" : `${n} days`}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="board-last">
-                          <span>Last checked</span>
-                          <strong>{formatDate(b.checked)}</strong>
-                        </div>
-                        <span className={`due-label ${boardDue(b) ? "is-due" : ""}`}>
-                          <span />
-                          {boardDue(b) ? "Check-in due" : "Up to date"}
-                        </span>
-                        <button className="button secondary" onClick={() => checkBoard(b.id)}>
-                          <Check size={15} />
-                          Mark checked
-                        </button>
-                        <button
-                          className="icon-button danger-hover"
-                          aria-label={`Remove ${b.name}`}
-                          onClick={() => {
-                            if (confirm(`Remove ${b.name} from your job boards?`))
-                              setStore((s) => ({
-                                ...s,
-                                boards: s.boards.filter((x) => x.id !== b.id),
-                              }));
-                          }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {!store.boards.length && (
                     <Empty
                       title="Build your opportunity radar"
                       description="Add a job board and set your first check-in reminder."
                       action={
-                        <button className="button primary" onClick={() => setModal("board")}>
+                        <button
+                          className="button primary"
+                          onClick={() => {
+                            setEditingBoard(null);
+                            setModal("board");
+                          }}
+                        >
                           Add a job board
                         </button>
                       }
@@ -1047,12 +1190,12 @@ function App() {
       )}
       {modal === "board" && (
         <BoardModal
-          onClose={() => setModal(null)}
-          onSave={(board) => {
-            setStore((s) => ({ ...s, boards: [...s.boards, board] }));
+          board={editingBoard}
+          onClose={() => {
             setModal(null);
-            notify("Job board added to your radar.");
+            setEditingBoard(null);
           }}
+          onSave={handleSaveBoard}
         />
       )}
       {modal === "help" && (
@@ -1661,7 +1804,7 @@ function BoardWidget({
       <div>
         {boards.slice(0, 3).map((b) => (
           <div className="board-widget-row" key={b.id}>
-            <a href={b.url} target="_blank" rel="noreferrer" className="board-widget-name">
+            <a href={formatExternalUrl(b.url)} target="_blank" rel="noreferrer" className="board-widget-name">
               <span className={`mini-board-logo ${b.id}`} style={{ color: b.color }}>
                 {b.name === "LinkedIn" ? "in" : b.name === "Wellfound" ? "w." : b.name[0]}
               </span>
@@ -2060,12 +2203,7 @@ function MarkdownEditor({
     </div>
   );
 }
-function formatExternalUrl(raw: string) {
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
+
 
 function RoundTopicsInput({
   topics,
@@ -3365,26 +3503,33 @@ function Reminders({
     </div>
   );
 }
-function BoardModal({ onClose, onSave }: { onClose: () => void; onSave: (b: Board) => void }) {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [frequency, setFrequency] = useState(1);
+function BoardModal({
+  board,
+  onClose,
+  onSave,
+}: {
+  board?: Board | null;
+  onClose: () => void;
+  onSave: (b: { id?: string; name: string; url: string; frequency: number }) => void;
+}) {
+  const [name, setName] = useState(board ? board.name : "");
+  const [url, setUrl] = useState(board ? board.url : "");
+  const [frequency, setFrequency] = useState(board ? board.frequency : 7);
+
   return (
     <ModalFrame
-      title="Broaden your radar."
-      subtitle="Add a favorite place to look for your next role."
+      title={board ? "Edit job board" : "Add job board"}
+      subtitle={board ? "Update name, URL, or check frequency." : "Add a favorite place to look for your next role."}
       onClose={onClose}
     >
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onSave({
-            id: uid(),
+            id: board?.id,
             name: name.trim(),
-            url,
+            url: url.trim(),
             frequency,
-            checked: new Date().toISOString(),
-            color: "#cf7048",
           });
         }}
       >
@@ -3401,8 +3546,7 @@ function BoardModal({ onClose, onSave }: { onClose: () => void; onSave: (b: Boar
           <label>
             Website URL
             <input
-              type="url"
-              required
+              type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://..."
@@ -3411,7 +3555,7 @@ function BoardModal({ onClose, onSave }: { onClose: () => void; onSave: (b: Boar
           <label>
             Check-in frequency
             <select value={frequency} onChange={(e) => setFrequency(+e.target.value)}>
-              {[1, 2, 3, 7, 14].map((n) => (
+              {[1, 2, 3, 5, 7, 14, 30].map((n) => (
                 <option key={n} value={n}>
                   Every {n === 1 ? "day" : `${n} days`}
                 </option>
@@ -3424,8 +3568,8 @@ function BoardModal({ onClose, onSave }: { onClose: () => void; onSave: (b: Boar
             Cancel
           </button>
           <button className="button primary" type="submit">
-            <Plus size={15} />
-            Add job board
+            {board ? <Check size={15} /> : <Plus size={15} />}
+            {board ? "Save changes" : "Add job board"}
           </button>
         </div>
       </form>

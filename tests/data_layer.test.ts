@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Repository, deriveNextAction } from "../electron/main/db/repository.ts";
-import { deriveClientNextAction, nextAction } from "../src/data.ts";
+import { deriveClientNextAction, nextAction, boardDue } from "../src/data.ts";
 import { seed } from "../scripts/seed.ts";
 
 function createTestRepo() {
@@ -459,4 +459,71 @@ test("dashboard nextAction accurately derives from rounds and manual overrides",
   res = deriveClientNextAction(appCleared);
   assert.equal(res.text, "Technical on 2026-11-20");
   assert.equal(res.isAuto, true);
+});
+
+test("job boards CRUD operations and due status derivation", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+
+    // 1. Create a board
+    const b1 = repo.createBoard({
+      name: "RemoteOK",
+      url: "https://remoteok.com",
+      check_every_days: 3,
+      last_checked_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    });
+    assert.ok(b1.id > 0);
+    assert.equal(b1.name, "RemoteOK");
+    assert.equal(b1.check_every_days, 3);
+
+    // 2. List boards
+    const boards = repo.listBoards();
+    assert.equal(boards.length, 1);
+    assert.equal(boards[0].name, "RemoteOK");
+
+    // 3. Check due status
+    assert.equal(
+      boardDue({
+        id: String(b1.id),
+        name: b1.name,
+        url: b1.url || "",
+        frequency: b1.check_every_days,
+        checked: b1.last_checked_at || "",
+      }),
+      true,
+    );
+
+    // 4. Update board (name, url, frequency, last_checked_at)
+    const nowIso = new Date().toISOString();
+    const updated = repo.updateBoard(b1.id, {
+      name: "RemoteOK Jobs",
+      url: "https://remoteok.com/all",
+      check_every_days: 7,
+      last_checked_at: nowIso,
+    });
+    assert.equal(updated.name, "RemoteOK Jobs");
+    assert.equal(updated.url, "https://remoteok.com/all");
+    assert.equal(updated.check_every_days, 7);
+    assert.equal(updated.last_checked_at, nowIso);
+
+    // Not due immediately after checking
+    assert.equal(
+      boardDue({
+        id: String(updated.id),
+        name: updated.name,
+        url: updated.url || "",
+        frequency: updated.check_every_days,
+        checked: updated.last_checked_at || "",
+      }),
+      false,
+    );
+
+    // 5. Delete board
+    const deleted = repo.deleteBoard(b1.id);
+    assert.equal(deleted, true);
+    assert.equal(repo.listBoards().length, 0);
+  } finally {
+    fixture.close();
+  }
 });
