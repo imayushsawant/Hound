@@ -150,6 +150,11 @@ app
         window.webContents.send(channels.dataChanged);
       }
     });
+    try {
+      const initialWorkspace = repository.loadWorkspace();
+      const loginEnabled = (initialWorkspace.settings as any)?.launchOnLogin ?? true;
+      app.setLoginItemSettings({ openAtLogin: loginEnabled });
+    } catch {}
     session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
       callback(false),
     );

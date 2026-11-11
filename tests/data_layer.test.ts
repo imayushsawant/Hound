@@ -599,3 +599,36 @@ test("scheduler checks due boards, follow-ups, and rounds with daily de-duplicat
     fixture.close();
   }
 });
+
+test("settings defaults and persistence for launchOnLogin, followUpDays, and schedulerEnabled", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+
+    // 1. Initial workspace has expected defaults
+    const initial = repo.loadWorkspace();
+    assert.equal(initial.settings.launchOnLogin, true);
+    assert.equal(initial.settings.followUpDays, 7);
+    assert.equal(initial.settings.schedulerEnabled, true);
+
+    // 2. Modify settings and save workspace
+    const updatedStore = {
+      ...initial,
+      settings: {
+        ...initial.settings,
+        launchOnLogin: false,
+        followUpDays: 14,
+        schedulerEnabled: false,
+      },
+    };
+    repo.saveWorkspace(updatedStore);
+
+    // 3. Reload workspace and verify persistence
+    const reloaded = repo.loadWorkspace();
+    assert.equal(reloaded.settings.launchOnLogin, false);
+    assert.equal(reloaded.settings.followUpDays, 14);
+    assert.equal(reloaded.settings.schedulerEnabled, false);
+  } finally {
+    fixture.close();
+  }
+});
