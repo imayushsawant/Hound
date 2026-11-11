@@ -1,5 +1,5 @@
-appId: com.nudge.desktop
-productName: Nudge
+appId: com.hound.desktop
+productName: Hound
 directories:
   output: release
 files:
@@ -12,9 +12,12 @@ win:
   target:
     - target: nsis
       arch: [x64]
+  icon: public/hound.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  shortcutName: Hound
 mac:
   target: dmg
   category: public.app-category.productivity
+  icon: public/hound.png

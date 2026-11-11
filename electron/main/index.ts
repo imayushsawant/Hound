@@ -140,11 +140,14 @@ function createWindow() {
 }
 
 app.setName("Hound");
-if (!app.requestSingleInstanceLock()) app.quit();
-app.on("second-instance", () => showWindow());
-app
-  .whenReady()
-  .then(() => {
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => showWindow());
+  app
+    .whenReady()
+    .then(() => {
     repository = new Repository(app.getPath("userData"), join(here, "migrations"), () => {
       for (const window of BrowserWindow.getAllWindows()) {
         window.webContents.send(channels.dataChanged);
@@ -256,6 +259,7 @@ app
     );
     app.quit();
   });
+}
 app.on("before-quit", () => {
   quitting = true;
 });
