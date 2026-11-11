@@ -656,27 +656,28 @@ export class Repository {
         description: c.overview || "",
         notes: c.notes || "",
       })),
-      applications: applications.map((a) => ({
-        id: key(a),
-        companyId: key(companies.find((c) => c.id === a.company_id)!),
-        role: a.role,
-        location: a.location || "",
-        mode: a.work_mode === "internship" ? "Internship" : "Full-time",
-        source: a.source || "",
-        url: a.posting_url || "",
-        applied: a.applied_date || "",
-        updated: (a.updated_at || "").slice(0, 10),
-        stage: a.status as WorkspaceApplication["stage"],
-        nextAction: a.next_action_override || "",
-        resume: a.resume_used || "",
-        offer: a.offer_package || "",
-        joining: a.joining_date || "",
-        rejection: a.rejection_reason || "",
-        topics: a.technical_topics || "",
-        followUpDone: Boolean(a.follow_up_done),
-        rounds: rounds
-          .filter((r) => r.application_id === a.id)
-          .map((r) => ({
+      applications: applications.map((a) => {
+        const appRounds = rounds.filter((r) => r.application_id === a.id);
+        const derived = deriveNextAction(a, appRounds as any);
+        return {
+          id: key(a),
+          companyId: key(companies.find((c) => c.id === a.company_id)!),
+          role: a.role,
+          location: a.location || "",
+          mode: a.work_mode === "internship" ? "Internship" : "Full-time",
+          source: a.source || "",
+          url: a.posting_url || "",
+          applied: a.applied_date || "",
+          updated: (a.updated_at || "").slice(0, 10),
+          stage: a.status as WorkspaceApplication["stage"],
+          nextAction: derived,
+          resume: a.resume_used || "",
+          offer: a.offer_package || "",
+          joining: a.joining_date || "",
+          rejection: a.rejection_reason || "",
+          topics: a.technical_topics || "",
+          followUpDone: Boolean(a.follow_up_done),
+          rounds: appRounds.map((r) => ({
             id: key(r),
             type: r.type,
             date: r.scheduled_date || "",
@@ -686,7 +687,8 @@ export class Repository {
             prep: r.prep_notes_md || "",
             notes: r.interview_notes_md || "",
           })),
-      })),
+        };
+      }),
       boards: boards.map((b) => ({
         id: key(b),
         name: b.name,
