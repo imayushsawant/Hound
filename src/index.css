@@ -1056,6 +1056,21 @@ kbd {
   color: #8299b8;
   border-color: #e5eaf3;
 }
+.stage-saved {
+  background: #f4f5ef;
+  color: #8e9680;
+  border-color: #e4e7db;
+}
+.stage-oa {
+  background: #fdf5ea;
+  color: #c79e56;
+  border-color: #f5e8d3;
+}
+.stage-ghosted {
+  background: #f0f0ee;
+  color: #92928c;
+  border-color: #e2e2dc;
+}
 .stage-screening {
   background: #fcf5e8;
   color: #c6a664;

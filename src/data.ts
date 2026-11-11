@@ -5,6 +5,9 @@ export const stages = [
   "Offer",
   "Rejected",
   "Withdrawn",
+  "Saved",
+  "OA",
+  "Ghosted",
 ] as const;
 export type Stage = (typeof stages)[number];
 export const roundTypes = [
@@ -86,6 +89,27 @@ export const dayLabel = (date: string) => {
   if (date.slice(0, 10) === isoDate()) return "Today";
   if (date.slice(0, 10) === isoDate(1)) return "Tomorrow";
   return formatDate(date);
+};
+export const relativeLastUpdated = (date: string) => {
+  if (!date) return "—";
+  const targetDate = new Date(date.length === 10 ? `${date}T00:00:00` : date);
+  const now = new Date();
+  const diffMs = now.getTime() - targetDate.getTime();
+  if (isNaN(diffMs)) return "—";
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 4) return `${diffWeeks}w ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) return `${diffMonths}mo ago`;
+  const diffYears = Math.floor(diffDays / 365);
+  return `${diffYears}y ago`;
 };
 export const isActive = (a: Application) => !["Rejected", "Withdrawn"].includes(a.stage);
 export const followUpDate = (a: Application) => {

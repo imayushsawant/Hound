@@ -59,6 +59,7 @@ import {
   isoDate,
   nextAction,
   readStore,
+  relativeLastUpdated,
   roundTypes,
   stages,
   uid,
@@ -153,7 +154,10 @@ function App() {
   }, [toast]);
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j") {
+      if (
+        (e.ctrlKey && e.key.toLowerCase() === "n" && !e.shiftKey && !e.altKey && !e.metaKey) ||
+        (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j")
+      ) {
         e.preventDefault();
         setModal("application");
       }
@@ -852,6 +856,12 @@ function App() {
           onClose={() => setModal(null)}
         >
           <div className="shortcut-row">
+            <span>Add an application</span>
+            <span>
+              <kbd>Ctrl</kbd> + <kbd>N</kbd>
+            </span>
+          </div>
+          <div className="shortcut-row">
             <span>Quick-add an application</span>
             <span>
               <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd>
@@ -999,36 +1009,62 @@ function ApplicationsTable({
   compact?: boolean;
 }) {
   const [tab, setTab] = useState("Active");
+  const [includeInactive, setIncludeInactive] = useState(false);
   const [stage, setStage] = useState("All stages");
   const [sort, setSort] = useState<{ key: string; asc: boolean }>({ key: "default", asc: true });
   const [page, setPage] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
   const rowsPerPage = compact ? 8 : 10;
-  useEffect(() => setPage(0), [query, tab, stage]);
+  useEffect(() => setPage(0), [query, tab, stage, includeInactive]);
   const results = useMemo(
     () =>
       store.applications
         .filter((a) => {
-          const company = store.companies.find((c) => c.id === a.companyId)!;
-          return (
-            (tab === "All" ||
-              (tab === "Active" && isActive(a)) ||
-              (tab === "Archived" && !isActive(a))) &&
-            (stage === "All stages" || a.stage === stage) &&
-            `${company.name} ${a.role} ${a.location}`.toLowerCase().includes(query.toLowerCase())
-          );
+          const company = store.companies.find((c) => c.id === a.companyId);
+          const companyName = company?.name || "";
+          // By default on Dashboard: active applications exclude Rejected, Withdrawn, and Offer unless toggled
+          const isTerminalOffer = a.stage === "Offer";
+          const isInactive = !isActive(a); // Rejected, Withdrawn
+          const matchesActiveRule = includeInactive || (!isInactive && !isTerminalOffer);
+
+          const matchesTab =
+            tab === "All" ||
+            (tab === "Active" && matchesActiveRule) ||
+            (tab === "Archived" && !matchesActiveRule);
+
+          const matchesStage = stage === "All stages" || a.stage === stage;
+          const matchesQuery = `${companyName} ${a.role} ${a.location}`
+            .toLowerCase()
+            .includes(query.toLowerCase());
+
+          return matchesTab && matchesStage && matchesQuery;
         })
         .sort((a, b) => {
           if (sort.key === "default") return 0;
-          const get = (x: Application) =>
-            sort.key === "company"
-              ? store.companies.find((c) => c.id === x.companyId)!.name
-              : sort.key === "action"
-                ? nextAction(x)
-                : String(x[sort.key as keyof Application]);
+          const get = (x: Application) => {
+            if (sort.key === "company") {
+              return store.companies.find((c) => c.id === x.companyId)?.name || "";
+            }
+            if (sort.key === "action") {
+              return nextAction(x);
+            }
+            if (sort.key === "stage") {
+              return x.stage;
+            }
+            if (sort.key === "role") {
+              return x.role;
+            }
+            if (sort.key === "applied") {
+              return x.applied;
+            }
+            if (sort.key === "updated") {
+              return x.updated;
+            }
+            return String(x[sort.key as keyof Application] || "");
+          };
           return get(a).localeCompare(get(b)) * (sort.asc ? 1 : -1);
         }),
-    [store, query, tab, stage, sort],
+    [store, query, tab, stage, sort, includeInactive],
   );
   const safePage = Math.min(page, Math.max(0, Math.ceil(results.length / rowsPerPage) - 1));
   const changeSort = (key: string) => setSort((s) => ({ key, asc: s.key === key ? !s.asc : true }));
@@ -1091,6 +1127,26 @@ function ApplicationsTable({
           )}
         </label>
         <div className="table-toolbar-actions">
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "11px",
+              color: "#747d68",
+              cursor: "pointer",
+              userSelect: "none",
+              marginRight: "6px",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+              style={{ cursor: "pointer", accentColor: "#6c8452" }}
+            />
+            <span>Show offers & archived</span>
+          </label>
           <label className={`filter-select ${stage !== "All stages" ? "filter-selected" : ""}`}>
             <ListFilter size={14} />
             <span>{stage}</span>
@@ -1213,7 +1269,9 @@ function ApplicationsTable({
                     </span>
                   </td>
                   <td className="date-cell">{formatDate(a.applied)}</td>
-                  <td className="date-cell">{dayLabel(a.updated)}</td>
+                  <td className="date-cell" title={formatDate(a.updated)}>
+                    {relativeLastUpdated(a.updated)}
+                  </td>
                   <td>
                     <button className="row-arrow" aria-label={`Open ${c.name} ${a.role}`}>
                       <ChevronRight size={14} />
@@ -1516,14 +1574,16 @@ function ApplicationModal({
 }) {
   const [companyName, setCompanyName] = useState(initialCompany);
   const [role, setRole] = useState("");
+  const [stage, setStage] = useState<Stage>("Applied");
+  const [showMore, setShowMore] = useState(false);
+  const [url, setUrl] = useState("");
+  const [source, setSource] = useState("Company website");
   const [location, setLocation] = useState("");
   const [mode, setMode] = useState("Full-time");
-  const [source, setSource] = useState("Company website");
-  const [stage, setStage] = useState<Stage>("Applied");
   const [applied, setApplied] = useState(isoDate());
-  const [url, setUrl] = useState("");
   const [resume, setResume] = useState("");
   const [action, setAction] = useState("");
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (!companyName.trim() || !role.trim()) return;
@@ -1547,7 +1607,7 @@ function ApplicationModal({
         mode,
         source,
         stage,
-        applied,
+        applied: applied || isoDate(),
         updated: isoDate(),
         url,
         resume,
@@ -1570,10 +1630,11 @@ function ApplicationModal({
     >
       <form onSubmit={submit}>
         <div className="form-grid">
-          <label>
+          <label className="full-width">
             Company <span>*</span>
             <input
               required
+              autoFocus
               list="company-suggestions"
               placeholder="e.g. Linear"
               value={companyName}
@@ -1595,73 +1656,111 @@ function ApplicationModal({
             />
           </label>
           <label>
-            Location
-            <input
-              placeholder="e.g. San Francisco or Remote"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </label>
-          <label>
-            Work mode
-            <select value={mode} onChange={(e) => setMode(e.target.value)}>
-              <option>Full-time</option>
-              <option>Internship</option>
-            </select>
-          </label>
-          <label>
-            Stage
+            Status
             <select value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
               {stages.map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </select>
           </label>
-          <label>
-            Applied date
-            <input
-              type="date"
-              required
-              value={applied}
-              onChange={(e) => setApplied(e.target.value)}
-            />
-          </label>
-          <label>
-            Source
-            <select value={source} onChange={(e) => setSource(e.target.value)}>
-              {["Company website", "LinkedIn", "Wellfound", "Referral", "Recruiter", "Other"].map(
-                (s) => (
-                  <option key={s}>{s}</option>
-                ),
-              )}
-            </select>
-          </label>
-          <label>
-            Resume used
-            <input
-              placeholder="e.g. Resume_Frontend.pdf"
-              value={resume}
-              onChange={(e) => setResume(e.target.value)}
-            />
-          </label>
-          <label className="full-width">
-            Job posting URL
-            <input
-              type="url"
-              placeholder="https://company.com/careers/your-next-role"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </label>
-          <label className="full-width">
-            Next action <span className="optional">Optional</span>
-            <input
-              placeholder="Leave blank to let Hound work it out"
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-            />
-            <small>We’ll automatically remind you to follow up 7 days after applying.</small>
-          </label>
+
+          <div className="full-width" style={{ marginTop: "4px" }}>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => setShowMore(!showMore)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#6c8452",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px 0",
+              }}
+            >
+              <ChevronDown
+                size={14}
+                style={{
+                  transform: showMore ? "rotate(180deg)" : "none",
+                  transition: "transform 0.15s ease",
+                }}
+              />
+              {showMore ? "Fewer details" : "More details"}
+            </button>
+          </div>
+
+          {showMore && (
+            <>
+              <label className="full-width">
+                Job posting URL
+                <input
+                  type="url"
+                  placeholder="https://company.com/careers/your-next-role"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </label>
+              <label>
+                Source
+                <select value={source} onChange={(e) => setSource(e.target.value)}>
+                  {[
+                    "Company website",
+                    "LinkedIn",
+                    "Wellfound",
+                    "Referral",
+                    "Recruiter",
+                    "Other",
+                  ].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Location
+                <input
+                  placeholder="e.g. San Francisco or Remote"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </label>
+              <label>
+                Work mode
+                <select value={mode} onChange={(e) => setMode(e.target.value)}>
+                  <option>Full-time</option>
+                  <option>Internship</option>
+                </select>
+              </label>
+              <label>
+                Applied date
+                <input
+                  type="date"
+                  value={applied}
+                  onChange={(e) => setApplied(e.target.value)}
+                />
+              </label>
+              <label className="full-width">
+                Resume used
+                <input
+                  placeholder="e.g. Resume_Frontend.pdf"
+                  value={resume}
+                  onChange={(e) => setResume(e.target.value)}
+                />
+              </label>
+              <label className="full-width">
+                Next action <span className="optional">Optional</span>
+                <input
+                  placeholder="Leave blank to let Hound work it out"
+                  value={action}
+                  onChange={(e) => setAction(e.target.value)}
+                />
+                <small>We’ll automatically remind you to follow up 7 days after applying.</small>
+              </label>
+            </>
+          )}
         </div>
         <div className="modal-footer">
           <span>
