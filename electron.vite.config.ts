@@ -33,9 +33,9 @@ export default defineConfig({
       react(),
       tailwindcss(),
       {
-        name: "nudge-document",
+        name: "hound-document",
         transformIndexHtml: (html) =>
-          html.replace("<!-- figma:lang -->", "en").replace("<!-- figma:title -->", "Nudge"),
+          html.replace("<!-- figma:lang -->", "en").replace("<!-- figma:title -->", "Hound"),
       },
     ],
     build: { rollupOptions: { input: resolve("index.html") } },
