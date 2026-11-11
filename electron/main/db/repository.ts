@@ -51,7 +51,7 @@ export function deriveNextAction(
 
   // 2. Nearest upcoming round's next_action or "<round title> on <date>"
   const upcomingRounds = rounds
-    .filter((r) => r.status === "upcoming")
+    .filter((r) => r.status && r.status.toLowerCase() === "upcoming")
     .sort((a, b) => {
       const dateA = a.scheduled_date || "9999-99-99";
       const dateB = b.scheduled_date || "9999-99-99";
@@ -441,8 +441,8 @@ export class Repository {
 
   createRound(input: CreateRoundInput): Round {
     const app = this.#database
-      .prepare("SELECT id FROM applications WHERE id = ?")
-      .get(input.application_id);
+      .prepare("SELECT id, status FROM applications WHERE id = ?")
+      .get(input.application_id) as { id: number; status: ApplicationStatus } | undefined;
     if (!app) throw new Error(`Application with id ${input.application_id} not found`);
 
     if (input.status && !RoundStatuses.includes(input.status)) {
@@ -456,6 +456,25 @@ export class Repository {
           .prepare("SELECT COALESCE(MAX(position), -1) as max_p FROM rounds WHERE application_id = ?")
           .get(input.application_id) as { max_p: number };
         position = maxPos.max_p + 1;
+      }
+
+      // Status auto-advance from the data layer
+      const oaTypes = ["Aptitude OA", "DSA OA"];
+      const interviewTypes = ["Technical", "LLD", "HLD", "Managerial", "HR", "Custom"];
+      let newStatus: ApplicationStatus | null = null;
+      if (oaTypes.includes(input.type)) {
+        if (app.status === "Saved" || app.status === "Applied") {
+          newStatus = "OA";
+        }
+      } else if (interviewTypes.includes(input.type)) {
+        if (app.status === "Saved" || app.status === "Applied" || app.status === "OA") {
+          newStatus = "Interview";
+        }
+      }
+      if (newStatus && newStatus !== app.status) {
+        this.#database
+          .prepare("UPDATE applications SET status = ? WHERE id = ?")
+          .run(newStatus, input.application_id);
       }
 
       const stmt = this.#database.prepare(`
@@ -671,22 +690,28 @@ export class Repository {
           updated: (a.updated_at || "").slice(0, 10),
           stage: a.status as WorkspaceApplication["stage"],
           nextAction: derived,
+          nextActionOverride: a.next_action_override || "",
           resume: a.resume_used || "",
           offer: a.offer_package || "",
           joining: a.joining_date || "",
           rejection: a.rejection_reason || "",
           topics: a.technical_topics || "",
           followUpDone: Boolean(a.follow_up_done),
-          rounds: appRounds.map((r) => ({
-            id: key(r),
-            type: r.type,
-            date: r.scheduled_date || "",
-            status: r.status as WorkspaceRound["status"],
-            nextAction: r.next_action || "",
-            resume: r.resume_used || "",
-            prep: r.prep_notes_md || "",
-            notes: r.interview_notes_md || "",
-          })),
+          rounds: appRounds
+            .sort((r1, r2) => (r1.position ?? 0) - (r2.position ?? 0))
+            .map((r) => ({
+              id: key(r),
+              position: r.position ?? 0,
+              type: r.type,
+              title: r.title || "",
+              date: r.scheduled_date || "",
+              status: (r.status as WorkspaceRound["status"]) || "upcoming",
+              nextAction: r.next_action || "",
+              resume: r.resume_used || "",
+              prep: r.prep_notes_md || "",
+              notes: r.interview_notes_md || "",
+              topics: r.topics_asked || "",
+            })),
         };
       }),
       boards: boards.map((b) => ({

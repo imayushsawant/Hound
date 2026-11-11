@@ -22,13 +22,16 @@ export const roundTypes = [
 ];
 export type Round = {
   id: string;
+  position?: number;
   type: string;
+  title?: string;
   date: string;
-  status: "Upcoming" | "Completed" | "Cancelled";
+  status: "upcoming" | "done" | "skipped" | "Upcoming" | "Completed" | "Cancelled";
   nextAction: string;
   resume: string;
   prep: string;
   notes: string;
+  topics?: string;
 };
 export type Application = {
   id: string;
@@ -42,6 +45,7 @@ export type Application = {
   updated: string;
   stage: Stage;
   nextAction: string;
+  nextActionOverride?: string;
   resume: string;
   rounds: Round[];
   offer: string;
@@ -118,15 +122,46 @@ export const followUpDate = (a: Application) => {
   d.setDate(d.getDate() + 7);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-export function nextAction(a: Application) {
-  if (a.nextAction.trim()) return a.nextAction;
-  const upcoming = a.rounds
-    .filter((r) => r.status === "Upcoming")
-    .sort((x, y) => x.date.localeCompare(y.date))[0];
-  if (upcoming) return `${upcoming.nextAction || upcoming.type} · ${dayLabel(upcoming.date)}`;
-  if (a.stage === "Applied" && a.applied && !a.followUpDone)
-    return `Follow up · ${dayLabel(followUpDate(a))}`;
-  return a.stage === "Offer" ? "Review offer" : "No next action";
+export function deriveClientNextAction(a: Application): { text: string; isAuto: boolean } {
+  // 1. Manual override if set
+  if (a.nextActionOverride && a.nextActionOverride.trim()) {
+    return { text: a.nextActionOverride.trim(), isAuto: false };
+  }
+  // 2. Upcoming rounds sorted by scheduled date / position
+  const upcoming = (a.rounds || [])
+    .filter((r) => r.status && r.status.toLowerCase() === "upcoming")
+    .sort((x, y) => {
+      const dateA = x.date || "9999-99-99";
+      const dateB = y.date || "9999-99-99";
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return (x.position ?? 0) - (y.position ?? 0);
+    })[0];
+  if (upcoming) {
+    if (upcoming.nextAction && upcoming.nextAction.trim()) {
+      return { text: upcoming.nextAction.trim(), isAuto: true };
+    }
+    const title = upcoming.title && upcoming.title.trim() ? upcoming.title.trim() : upcoming.type;
+    if (upcoming.date) {
+      return { text: `${title} on ${upcoming.date.slice(0, 10)}`, isAuto: true };
+    }
+    return { text: title, isAuto: true };
+  }
+  // 3. Follow up if applied > 7 days ago
+  const terminalStatuses: Stage[] = ["Offer", "Rejected", "Ghosted", "Withdrawn"];
+  if (a.applied && !terminalStatuses.includes(a.stage)) {
+    const appliedTime = new Date(a.applied).getTime();
+    if (!isNaN(appliedTime)) {
+      const diffDays = (Date.now() - appliedTime) / (1000 * 60 * 60 * 24);
+      if (diffDays > 7 && !a.followUpDone) {
+        return { text: "Follow up", isAuto: true };
+      }
+    }
+  }
+  return { text: "", isAuto: true };
+}
+
+export function nextAction(a: Application): string {
+  return deriveClientNextAction(a).text;
 }
 export function createSeed(): Store {
   const companies: Company[] = [

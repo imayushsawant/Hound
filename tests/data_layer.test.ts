@@ -282,3 +282,107 @@ test("seed script populates 5 companies and 8 applications with multiple per com
     fixture.close();
   }
 });
+
+test("round creation auto-advances application status in data layer", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+
+    // 1. Create an application in Applied status
+    const app = repo.createApplication({
+      company_name: "Acme Corp",
+      role: "Backend Engineer",
+      status: "Applied",
+    });
+    assert.equal(app.status, "Applied");
+
+    // 2. Add an OA round -> status auto-advances to OA
+    repo.createRound({
+      application_id: app.id,
+      type: "DSA OA",
+      status: "upcoming",
+    });
+    const afterOA = repo.getApplication(app.id)!;
+    assert.equal(afterOA.status, "OA");
+
+    // 3. Add a Technical round -> status auto-advances to Interview
+    repo.createRound({
+      application_id: app.id,
+      type: "Technical",
+      status: "upcoming",
+    });
+    const afterTech = repo.getApplication(app.id)!;
+    assert.equal(afterTech.status, "Interview");
+
+    // 4. Add an HR round -> remains Interview (does not regress)
+    repo.createRound({
+      application_id: app.id,
+      type: "HR",
+      status: "upcoming",
+    });
+    const afterHR = repo.getApplication(app.id)!;
+    assert.equal(afterHR.status, "Interview");
+  } finally {
+    fixture.close();
+  }
+});
+
+test("application next_action dynamically updates as rounds and overrides change", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+
+    // Create app applied today
+    const app = repo.createApplication({
+      company_name: "OpenAI",
+      role: "Research Engineer",
+      applied_date: new Date().toISOString().slice(0, 10),
+    });
+    // No rounds yet -> empty next_action
+    let listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "");
+
+    // Add round 1: Technical on 2026-11-20
+    const r1 = repo.createRound({
+      application_id: app.id,
+      type: "Technical",
+      scheduled_date: "2026-11-20",
+      status: "upcoming",
+    });
+    listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "Technical on 2026-11-20");
+
+    // Update round 1's custom next_action
+    repo.updateRound(r1.id, {
+      next_action: "Review transformer attention math",
+    });
+    listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "Review transformer attention math");
+
+    // Add nearer round: OA on 2026-11-15 -> becomes nearest upcoming
+    repo.createRound({
+      application_id: app.id,
+      type: "DSA OA",
+      scheduled_date: "2026-11-15",
+      status: "upcoming",
+    });
+    listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "DSA OA on 2026-11-15");
+
+    // Set typed manual override on application -> takes precedence over rounds
+    repo.updateApplication(app.id, {
+      next_action_override: "Call recruiter to confirm schedule",
+    });
+    listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "Call recruiter to confirm schedule");
+
+    // Clear typed manual override -> falls back to derived upcoming round
+    repo.updateApplication(app.id, {
+      next_action_override: "",
+    });
+    listed = repo.listApplications().find((a) => a.id === app.id)!;
+    assert.equal(listed.next_action, "DSA OA on 2026-11-15");
+  } finally {
+    fixture.close();
+  }
+});
