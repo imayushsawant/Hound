@@ -53,6 +53,7 @@ import {
   boardDue,
   createSeed,
   dayLabel,
+  deriveClientNextAction,
   followUpDate,
   formatDate,
   isActive,
@@ -1922,6 +1923,84 @@ function formatExternalUrl(raw: string) {
   return `https://${trimmed}`;
 }
 
+function RoundTopicsInput({
+  topics,
+  onChange,
+}: {
+  topics: string;
+  onChange: (newTopics: string) => void;
+}) {
+  const [inputVal, setInputVal] = useState("");
+  const tags = useMemo(() => {
+    if (!topics || !topics.trim()) return [];
+    return topics
+      .split(/[\n,;]+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }, [topics]);
+
+  const addTag = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const exists = tags.some((t) => t.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      const nextTags = [...tags, trimmed];
+      onChange(nextTags.join(", "));
+    }
+    setInputVal("");
+  };
+
+  const removeTag = (idx: number) => {
+    const nextTags = tags.filter((_, i) => i !== idx);
+    onChange(nextTags.join(", "));
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
+      {tags.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", alignItems: "center" }}>
+          {tags.map((tag, i) => (
+            <span key={i} className="topic-tag-pill">
+              {tag}
+              <button
+                type="button"
+                className="topic-tag-remove"
+                onClick={() => removeTag(i)}
+                title={`Remove ${tag}`}
+                aria-label={`Remove ${tag}`}
+              >
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        value={inputVal}
+        placeholder={tags.length === 0 ? "Add technical topics asked (press Enter)..." : "Add another topic..."}
+        onChange={(e) => setInputVal(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            addTag(inputVal);
+          }
+        }}
+        onBlur={() => {
+          if (inputVal.trim()) addTag(inputVal);
+        }}
+        style={{ fontSize: "11px", padding: "4px 8px", borderRadius: "5px" }}
+      />
+    </div>
+  );
+}
+
+function isRoundOverdue(r: Round): boolean {
+  if (!r.status || r.status.toLowerCase() !== "upcoming") return false;
+  if (!r.date) return false;
+  const targetTime = new Date(r.date.length === 10 ? `${r.date}T23:59:59` : r.date).getTime();
+  return !isNaN(targetTime) && targetTime < Date.now();
+}
+
 function ApplicationDetail({
   application: a,
   company,
@@ -1950,7 +2029,19 @@ function ApplicationDetail({
   const [applied, setApplied] = useState(a.applied);
   const [stage, setStage] = useState(a.stage);
   const [resume, setResume] = useState(a.resume);
+  const [nextActionOverride, setNextActionOverride] = useState(a.nextActionOverride || "");
   const [companyOverview, setCompanyOverview] = useState(company.description || "");
+
+  // Add round bar state
+  const [newRoundType, setNewRoundType] = useState<string>("Technical");
+  const [newRoundDate, setNewRoundDate] = useState("");
+  const [newRoundAction, setNewRoundAction] = useState("");
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  // Notes placeholder modal state
+  const [activeNoteModal, setActiveNoteModal] = useState<{ round: Round; type: "prep" | "interview" } | null>(null);
 
   // Outcome fields
   const [offer, setOffer] = useState(a.offer || "");
@@ -1984,6 +2075,7 @@ function ApplicationDetail({
     setApplied(a.applied);
     setStage(a.stage);
     setResume(a.resume);
+    setNextActionOverride(a.nextActionOverride || "");
     setCompanyOverview(company.description || "");
     setOffer(a.offer || "");
     setJoining(a.joining || "");
@@ -2012,11 +2104,85 @@ function ApplicationDetail({
     }
   };
 
+  const derivedNext = useMemo(() => {
+    return deriveClientNextAction({
+      ...a,
+      nextActionOverride,
+      rounds: a.rounds,
+    });
+  }, [a, nextActionOverride]);
+
+  // Handle adding a new round with status auto-advance
+  const handleAddRound = () => {
+    const roundsList = a.rounds || [];
+    const maxPos = roundsList.reduce((max, r) => Math.max(max, r.position ?? 0), -1);
+    const nextPos = maxPos + 1;
+
+    // Status auto-advance:
+    const oaTypes = ["Aptitude OA", "DSA OA"];
+    const interviewTypes = ["Technical", "LLD", "HLD", "Managerial", "HR", "Custom"];
+    let nextStage: Stage = a.stage;
+    if (oaTypes.includes(newRoundType)) {
+      if (a.stage === "Saved" || a.stage === "Applied") {
+        nextStage = "OA";
+      }
+    } else if (interviewTypes.includes(newRoundType)) {
+      if (a.stage === "Saved" || a.stage === "Applied" || a.stage === "OA") {
+        nextStage = "Interview";
+      }
+    }
+
+    const created: Round = {
+      id: uid(),
+      position: nextPos,
+      type: newRoundType,
+      title: "",
+      date: newRoundDate,
+      status: "upcoming",
+      nextAction: newRoundAction.trim(),
+      resume: a.resume || "",
+      prep: "",
+      notes: "",
+      topics: "",
+    };
+
+    const updatedRounds = [...roundsList, created];
+    onUpdate({
+      stage: nextStage,
+      rounds: updatedRounds,
+    });
+    setNewRoundDate("");
+    setNewRoundAction("");
+    triggerOverviewSaved();
+  };
+
+  const handleUpdateRound = (roundId: string, patch: Partial<Round>) => {
+    const updated = (a.rounds || []).map((r) => (r.id === roundId ? { ...r, ...patch } : r));
+    onUpdate({ rounds: updated });
+    triggerOverviewSaved();
+  };
+
+  const handleDeleteRound = (roundId: string) => {
+    const updated = (a.rounds || []).filter((r) => r.id !== roundId);
+    onUpdate({ rounds: updated });
+    triggerOverviewSaved();
+  };
+
+  const handleReorder = (fromIndex: number, toIndex: number) => {
+    const list = [...(a.rounds || [])].sort((x, y) => (x.position ?? 0) - (y.position ?? 0));
+    if (toIndex < 0 || toIndex >= list.length) return;
+    const [moved] = list.splice(fromIndex, 1);
+    list.splice(toIndex, 0, moved);
+    const reindexed = list.map((item, i) => ({ ...item, position: i }));
+    onUpdate({ rounds: reindexed });
+    triggerOverviewSaved();
+  };
+
   // Aggregated technical topics from all rounds (read-only)
   const aggregatedTopics = useMemo(() => {
     const list: string[] = [];
     for (const r of a.rounds || []) {
-      const raw = (r as any).topics || (r as any).topics_asked || "";
+      const raw = r.topics || (r as any).topics_asked || "";
       if (raw && typeof raw === "string") {
         const parts = raw.split(/[\n,;]+/).map((s: string) => s.trim()).filter(Boolean);
         list.push(...parts);
@@ -2037,6 +2203,10 @@ function ApplicationDetail({
     }
     return unique;
   }, [a.rounds, a.topics]);
+
+  const sortedRounds = useMemo(() => {
+    return [...(a.rounds || [])].sort((x, y) => (x.position ?? 0) - (y.position ?? 0));
+  }, [a.rounds]);
 
   return (
     <div className="detail-page application-detail-scrollable">
@@ -2247,6 +2417,73 @@ function ApplicationDetail({
               />
             </label>
 
+            {/* Next action field with override and auto badge */}
+            <div className="full-width" style={{ marginTop: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "#687b55", display: "flex", alignItems: "center", gap: "6px" }}>
+                  Next action
+                  {derivedNext.isAuto ? (
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "#7e8f6e",
+                        background: "#eaf0e3",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      auto
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "#c07a4e",
+                        background: "#faede5",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      override
+                    </span>
+                  )}
+                </span>
+                {nextActionOverride ? (
+                  <button
+                    type="button"
+                    className="text-link"
+                    style={{ fontSize: "11px", color: "#b35e46", cursor: "pointer" }}
+                    onClick={() => {
+                      setNextActionOverride("");
+                      onUpdate({ nextActionOverride: "" });
+                      triggerOverviewSaved();
+                    }}
+                  >
+                    Clear override
+                  </button>
+                ) : null}
+              </div>
+              <input
+                value={nextActionOverride}
+                placeholder={derivedNext.isAuto && derivedNext.text ? `Auto: ${derivedNext.text}` : "Type a custom next action override..."}
+                onChange={(e) => setNextActionOverride(e.target.value)}
+                onBlur={() => {
+                  if (nextActionOverride !== (a.nextActionOverride || "")) {
+                    onUpdate({ nextActionOverride });
+                    triggerOverviewSaved();
+                  }
+                }}
+                style={{ width: "100%" }}
+              />
+              <span className="muted small" style={{ fontSize: "10px", marginTop: "4px", display: "block" }}>
+                {nextActionOverride
+                  ? "Manual override active. Click 'Clear override' to fall back to automatic derivation."
+                  : `Automatically derived from rounds and timeline (${derivedNext.text || "none"}). Typing here sets an override.`}
+              </span>
+            </div>
+
             <label className="full-width">
               Company overview (shared with company record)
               <textarea
@@ -2261,67 +2498,247 @@ function ApplicationDetail({
           </div>
         </section>
 
-        {/* SECTION 2: PLACEHOLDER AREA FOR ROUNDS (NEXT PROMPT) */}
-        <section className="content-card rounds-placeholder-card">
+        {/* SECTION 2: ROUNDS & TIMELINE */}
+        <section className="content-card rounds-section">
           <div className="card-heading">
             <div>
               <h2>Rounds & timeline</h2>
-              <p className="muted small">Ordered rounds, interview notes, and timeline.</p>
+              <p className="muted small">Vertical timeline ordered by position. Drag or use arrows to reorder.</p>
             </div>
-            <span className="small-count">{a.rounds.length} {a.rounds.length === 1 ? "round" : "rounds"}</span>
+            <span className="small-count">{sortedRounds.length} {sortedRounds.length === 1 ? "round" : "rounds"}</span>
           </div>
+
+          {/* Quick Add Round Bar */}
           <div
             style={{
-              padding: "28px 20px",
-              textAlign: "center",
-              border: "1px dashed #d5dec7",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "10px",
+              alignItems: "flex-end",
+              padding: "16px",
+              background: "#fbfcf9",
+              border: "1px solid #e3e8da",
               borderRadius: "8px",
-              background: "#fafbf9",
-              color: "#8a9879",
+              marginBottom: "16px",
             }}
           >
-            <Clock3 size={24} style={{ marginBottom: "8px", color: "#a5b493" }} />
-            <h3 style={{ fontSize: "14px", fontWeight: 600, color: "#687b55", marginBottom: "4px" }}>
-              Rounds & Timeline
-            </h3>
-            <p className="muted small" style={{ maxWidth: "440px", margin: "0 auto" }}>
-              Interactive rounds timeline, Markdown notes editor, and round ordering will be configured here in the next step.
-            </p>
-            {a.rounds.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  justifyContent: "center",
-                  marginTop: "16px",
-                }}
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55" }}>
+              Round type
+              <select
+                value={newRoundType}
+                onChange={(e) => setNewRoundType(e.target.value)}
+                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
               >
-                {a.rounds.map((r, i) => (
-                  <span
-                    key={r.id || i}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "5px 12px",
-                      background: "#ffffff",
-                      border: "1px solid #e3e8da",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      color: "#687b55",
+                {roundTypes.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55" }}>
+              Scheduled date (optional)
+              <input
+                type="datetime-local"
+                value={newRoundDate}
+                onChange={(e) => setNewRoundDate(e.target.value)}
+                style={{ padding: "5px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55", flex: "1 1 200px" }}>
+              Next action (optional)
+              <input
+                value={newRoundAction}
+                onChange={(e) => setNewRoundAction(e.target.value)}
+                placeholder="e.g. Review system design patterns"
+                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
+              />
+            </label>
+            <button
+              type="button"
+              className="button primary"
+              onClick={handleAddRound}
+              style={{ height: "35px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px" }}
+            >
+              <Plus size={15} /> Add round
+            </button>
+          </div>
+
+          {/* Timeline List */}
+          {sortedRounds.length > 0 ? (
+            <div className="round-timeline">
+              {sortedRounds.map((r, index) => {
+                const overdue = isRoundOverdue(r);
+                return (
+                  <div
+                    key={r.id}
+                    className={`timeline-round-item ${overdue ? "round-overdue" : ""}`}
+                    draggable={true}
+                    onDragStart={() => setDraggedIndex(index)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (draggedIndex !== null && draggedIndex !== index) {
+                        handleReorder(draggedIndex, index);
+                        setDraggedIndex(null);
+                      }
                     }}
                   >
-                    <strong>{r.type}</strong>
-                    <span className="muted">·</span>
-                    <span>{r.date ? formatDate(r.date) : "No date"}</span>
-                    <span className="muted">·</span>
-                    <span className={`round-status ${r.status?.toLowerCase()}`}>{r.status}</span>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", gap: "10px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div className="round-drag-handle" title="Drag to reorder">
+                          <ArrowDownUp size={14} />
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <button
+                            type="button"
+                            className="icon-button"
+                            disabled={index === 0}
+                            onClick={() => handleReorder(index, index - 1)}
+                            title="Move up"
+                            aria-label="Move up"
+                            style={{ opacity: index === 0 ? 0.3 : 1, padding: "1px 4px", fontSize: "9px", height: "auto" }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-button"
+                            disabled={index === sortedRounds.length - 1}
+                            onClick={() => handleReorder(index, index + 1)}
+                            title="Move down"
+                            aria-label="Move down"
+                            style={{ opacity: index === sortedRounds.length - 1 ? 0.3 : 1, padding: "1px 4px", fontSize: "9px", height: "auto" }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a9879" }}>
+                            #{index + 1}
+                          </span>
+                          <input
+                            value={r.title !== undefined && r.title !== null && r.title !== "" ? r.title : r.type}
+                            onChange={(e) => handleUpdateRound(r.id, { title: e.target.value })}
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              color: "#4f5f41",
+                              border: "1px solid transparent",
+                              background: "transparent",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                            }}
+                            onFocus={(e) => (e.target.style.border = "1px solid #ccd6c0")}
+                            onBlur={(e) => (e.target.style.border = "1px solid transparent")}
+                          />
+                        </div>
+                        {overdue && (
+                          <span className="round-overdue-badge">
+                            <Clock3 size={11} /> Overdue
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <select
+                          value={r.status ? r.status.toLowerCase() : "upcoming"}
+                          onChange={(e) => handleUpdateRound(r.id, { status: e.target.value as any })}
+                          style={{
+                            fontSize: "11px",
+                            padding: "3px 8px",
+                            borderRadius: "5px",
+                            fontWeight: 600,
+                            color: r.status?.toLowerCase() === "done" ? "#4f772d" : r.status?.toLowerCase() === "skipped" ? "#8f9986" : "#b06c3a",
+                            background: r.status?.toLowerCase() === "done" ? "#f1f8eb" : r.status?.toLowerCase() === "skipped" ? "#f3f5f0" : "#fff5eb",
+                            border: "1px solid #d2dcc8",
+                          }}
+                        >
+                          <option value="upcoming">Upcoming</option>
+                          <option value="done">Done</option>
+                          <option value="skipped">Skipped</option>
+                        </select>
+                        <button
+                          type="button"
+                          className="icon-button danger-hover"
+                          onClick={() => handleDeleteRound(r.id)}
+                          title="Delete round"
+                          aria-label="Delete round"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-grid" style={{ gap: "10px 14px" }}>
+                      <label>
+                        Scheduled date & time
+                        <input
+                          type="datetime-local"
+                          value={r.date || ""}
+                          onChange={(e) => handleUpdateRound(r.id, { date: e.target.value })}
+                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                        />
+                      </label>
+                      <label>
+                        Next action
+                        <input
+                          value={r.nextAction || ""}
+                          placeholder="e.g. Practice dynamic programming"
+                          onChange={(e) => handleUpdateRound(r.id, { nextAction: e.target.value })}
+                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                        />
+                      </label>
+                      <label>
+                        Resume used
+                        <input
+                          value={r.resume || ""}
+                          placeholder={a.resume || "Resume filename..."}
+                          onChange={(e) => handleUpdateRound(r.id, { resume: e.target.value })}
+                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                        />
+                      </label>
+                      <div>
+                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#8a9879", display: "block", marginBottom: "6px" }}>
+                          Notes
+                        </span>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            type="button"
+                            className="button secondary small-button"
+                            onClick={() => setActiveNoteModal({ round: r, type: "prep" })}
+                            style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                          >
+                            <FileText size={12} /> Prep notes
+                          </button>
+                          <button
+                            type="button"
+                            className="button secondary small-button"
+                            onClick={() => setActiveNoteModal({ round: r, type: "interview" })}
+                            style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                          >
+                            <FileText size={12} /> Interview notes
+                          </button>
+                        </div>
+                      </div>
+                      <div className="full-width" style={{ marginTop: "4px" }}>
+                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#8a9879", display: "block", marginBottom: "4px" }}>
+                          Technical topics asked
+                        </span>
+                        <RoundTopicsInput
+                          topics={r.topics || ""}
+                          onChange={(topics) => handleUpdateRound(r.id, { topics })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: "24px", textAlign: "center", background: "#fbfcf9", borderRadius: "8px", border: "1px dashed #dbe4d1" }}>
+              <p className="muted small" style={{ margin: 0 }}>
+                No rounds added yet. Select a round type above and click <strong>Add round</strong> to start your timeline.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* SECTION 3: OUTCOME */}
@@ -2435,6 +2852,43 @@ function ApplicationDetail({
           </div>
         </section>
       </div>
+
+      {/* Notes Placeholder Modal */}
+      {activeNoteModal && (
+        <ModalFrame
+          title={`${activeNoteModal.type === "prep" ? "Prep notes" : "Interview notes"} · ${activeNoteModal.round.type}`}
+          subtitle="Interactive Markdown editor routes are coming soon. Full note editing will be integrated here."
+          onClose={() => setActiveNoteModal(null)}
+        >
+          <div style={{ padding: "16px 0" }}>
+            <div style={{ padding: "16px", background: "#f8faf5", borderRadius: "8px", border: "1px solid #e1e7d7" }}>
+              <p className="muted small" style={{ margin: "0 0 10px 0" }}>
+                Notes for Round {((activeNoteModal.round.position ?? 0) + 1)} ({activeNoteModal.round.title || activeNoteModal.round.type}):
+              </p>
+              <textarea
+                rows={6}
+                value={activeNoteModal.type === "prep" ? (activeNoteModal.round.prep || "") : (activeNoteModal.round.notes || "")}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleUpdateRound(activeNoteModal.round.id, {
+                    [activeNoteModal.type === "prep" ? "prep" : "notes"]: val,
+                  });
+                  setActiveNoteModal((prev) =>
+                    prev ? { ...prev, round: { ...prev.round, [prev.type === "prep" ? "prep" : "notes"]: val } } : null,
+                  );
+                }}
+                placeholder={`Type ${activeNoteModal.type} notes here...`}
+                style={{ width: "100%", resize: "vertical" }}
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+              <button type="button" className="button primary" onClick={() => setActiveNoteModal(null)}>
+                <Check size={14} /> Close
+              </button>
+            </div>
+          </div>
+        </ModalFrame>
+      )}
 
       {deleteConfirm && (
         <ModalFrame

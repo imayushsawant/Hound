@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Repository, deriveNextAction } from "../electron/main/db/repository.ts";
+import { deriveClientNextAction, nextAction } from "../src/data.ts";
 import { seed } from "../scripts/seed.ts";
 
 function createTestRepo() {
@@ -385,4 +386,72 @@ test("application next_action dynamically updates as rounds and overrides change
   } finally {
     fixture.close();
   }
+});
+
+test("dashboard nextAction accurately derives from rounds and manual overrides", () => {
+  const baseApp = {
+    id: "app-1",
+    companyId: "c-1",
+    role: "Fullstack Engineer",
+    location: "Remote",
+    mode: "Full-time",
+    source: "LinkedIn",
+    url: "",
+    applied: new Date().toISOString().slice(0, 10),
+    updated: new Date().toISOString().slice(0, 10),
+    stage: "Interview" as const,
+    nextAction: "",
+    resume: "",
+    rounds: [],
+    offer: "",
+    joining: "",
+    rejection: "",
+    topics: "",
+  };
+
+  // 1. No rounds -> empty action
+  let res = deriveClientNextAction(baseApp);
+  assert.equal(res.text, "");
+  assert.equal(res.isAuto, true);
+
+  // 2. Add upcoming round -> auto derived
+  const appWithRound = {
+    ...baseApp,
+    rounds: [
+      {
+        id: "r-1",
+        position: 0,
+        type: "Technical",
+        date: "2026-11-20T10:00",
+        status: "upcoming" as const,
+        nextAction: "",
+        resume: "",
+        prep: "",
+        notes: "",
+      },
+    ],
+  };
+  res = deriveClientNextAction(appWithRound);
+  assert.equal(res.text, "Technical on 2026-11-20");
+  assert.equal(res.isAuto, true);
+  assert.equal(nextAction(appWithRound), "Technical on 2026-11-20");
+
+  // 3. Set typed override
+  const appWithOverride = {
+    ...appWithRound,
+    nextActionOverride: "Follow up with recruiter directly",
+  };
+  res = deriveClientNextAction(appWithOverride);
+  assert.equal(res.text, "Follow up with recruiter directly");
+  assert.equal(res.isAuto, false);
+  assert.equal(nextAction(appWithOverride), "Follow up with recruiter directly");
+
+  // 4. Clear override -> returns to auto derived
+  const appCleared = {
+    ...appWithOverride,
+    nextActionOverride: "",
+  };
+  res = deriveClientNextAction(appCleared);
+  assert.equal(res.text, "Technical on 2026-11-20");
+  assert.equal(res.isAuto, true);
 });

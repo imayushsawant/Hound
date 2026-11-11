@@ -3404,6 +3404,74 @@ kbd {
     transform: translateY(0);
   }
 }
+.round-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  margin-top: 16px;
+}
+.timeline-round-item {
+  position: relative;
+  background: white;
+  border: 1px solid #e3e8da;
+  border-radius: 8px;
+  padding: 16px 20px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.timeline-round-item:hover {
+  border-color: #ccd8bf;
+}
+.timeline-round-item.round-overdue {
+  border-color: #e58d75;
+  background: #fffbfa;
+}
+.round-overdue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #c0452d;
+  background: #feeae6;
+  border: 1px solid #f6cfc6;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.topic-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #4a5c3a;
+  background: #f0f4ea;
+  border: 1px solid #d8e2cf;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.topic-tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  color: #8c9b7d;
+}
+.topic-tag-remove:hover {
+  color: #c0452d;
+}
+.round-drag-handle {
+  cursor: grab;
+  color: #b3bea6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+.round-drag-handle:active {
+  cursor: grabbing;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
