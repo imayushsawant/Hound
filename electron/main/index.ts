@@ -73,7 +73,7 @@ function createWindow() {
   });
   mainWindow = window;
   window.on("close", (event) => {
-    if (!quitting && tray) {
+    if (!quitting) {
       event.preventDefault();
       window.hide();
     }
@@ -166,15 +166,15 @@ app
     tray.setToolTip("Hound — Your next chapter");
     tray.setContextMenu(
       Menu.buildFromTemplate([
-        { label: "Open Hound", click: () => showWindow() },
+        { label: "Open", click: () => showWindow() },
         {
-          label: "Add application",
+          label: "Quick Add",
           accelerator: "CommandOrControl+Shift+J",
           click: () => showWindow(true),
         },
         { type: "separator" },
         {
-          label: "Quit Hound",
+          label: "Quit",
           click: () => {
             quitting = true;
             app.quit();
@@ -182,6 +182,7 @@ app
         },
       ]),
     );
+    tray.on("click", () => showWindow());
     tray.on("double-click", () => showWindow());
     globalShortcut.register("CommandOrControl+Shift+J", () => showWindow(true));
     app.on("activate", () => {
