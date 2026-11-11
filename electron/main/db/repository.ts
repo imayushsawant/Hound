@@ -723,8 +723,21 @@ export class Repository {
         color: b.color,
       })),
       settings: preferences
-        ? JSON.parse(preferences.value)
-        : { name: "Alex", notifications: false, launchOnLogin: false },
+        ? {
+            name: "Alex",
+            notifications: true,
+            launchOnLogin: true,
+            followUpDays: 7,
+            schedulerEnabled: true,
+            ...JSON.parse(preferences.value),
+          }
+        : {
+            name: "Alex",
+            notifications: true,
+            launchOnLogin: true,
+            followUpDays: 7,
+            schedulerEnabled: true,
+          },
     };
   }
 

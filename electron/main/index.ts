@@ -16,11 +16,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { channels, type AppInfo } from "../../src/shared/api";
 import { Repository } from "./db/repository";
 import { registerDataIpcHandlers } from "./ipc";
+import { Scheduler } from "./scheduler";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rendererFile = join(here, "../renderer/index.html");
 const devURL = process.env.ELECTRON_RENDERER_URL;
 let repository: Repository | undefined;
+let scheduler: Scheduler | undefined;
 let mainWindow: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let quitting = false;
@@ -41,6 +43,13 @@ function showWindow(quickAdd = false) {
   mainWindow!.show();
   mainWindow!.focus();
   if (quickAdd) mainWindow!.webContents.send("desktop:quick-add");
+}
+
+function focusApp(route?: string) {
+  showWindow();
+  if (route && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("navigate:route", route);
+  }
 }
 
 function createWindow() {
@@ -145,6 +154,11 @@ app
         new Notification({ title, body, icon: join(here, "../renderer/hound.png") }).show();
     });
     createWindow();
+    scheduler = new Scheduler(repository!, {
+      onFocusApp: (route) => focusApp(route),
+      iconPath: join(here, "../renderer/hound.png"),
+    });
+    scheduler.start();
     const icon = nativeImage
       .createFromPath(join(here, "../renderer/hound.png"))
       .resize({ width: 20, height: 20 });
@@ -188,6 +202,7 @@ app.on("before-quit", () => {
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
   tray?.destroy();
+  scheduler?.stop();
   repository?.close();
 });
 app.on("window-all-closed", () => {

@@ -111,6 +111,14 @@ function parseHashRoute(): {
   if (compMatch) {
     return { companyId: compMatch[1] };
   }
+  const jobBoardMatch = hash.match(/^(job-boards|job%20boards)$/i);
+  if (jobBoardMatch) {
+    return { page: "Job boards" };
+  }
+  const remindersMatch = hash.match(/^reminders$/i);
+  if (remindersMatch) {
+    return { page: "Reminders" };
+  }
   return {};
 }
 
@@ -270,11 +278,22 @@ function App() {
       } else if (parsed.companyId) {
         setSelectedCompany(parsed.companyId);
         setActiveNoteRoute(null);
+      } else if (parsed.page) {
+        setPage(parsed.page);
+        setSelectedApp(null);
+        setSelectedCompany(null);
+        setActiveNoteRoute(null);
       }
     };
     handleHash();
     window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
+    const offNavigate = window.houndDesktop?.onNavigateRoute?.((route: string) => {
+      window.location.hash = route;
+    });
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      offNavigate?.();
+    };
   }, []);
 
   const navigate = (next: Page) => {
@@ -3715,6 +3734,53 @@ function Settings({
                 } finally {
                   setBusy(false);
                 }
+              }}
+            >
+              <span />
+            </button>
+          </div>
+          <div className="settings-row">
+            <div>
+              <h3>Follow-up reminder days</h3>
+              <p>Days after applying to remind you for a follow-up (default 7 days).</p>
+            </div>
+            <select
+              aria-label="Follow-up reminder days"
+              value={store.settings.followUpDays ?? 7}
+              onChange={(e) => {
+                const days = +e.target.value;
+                setting({ followUpDays: days });
+                notify(`Follow-up reminder set to ${days} days.`);
+              }}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                border: "1px solid #ccd6c0",
+                background: "white",
+                fontSize: "12px",
+              }}
+            >
+              {[3, 5, 7, 10, 14, 21].map((n) => (
+                <option key={n} value={n}>
+                  {n} days
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="settings-row">
+            <div>
+              <h3>Background scheduler</h3>
+              <p>Check for due boards, follow-ups, and interviews on app start and every 15 minutes.</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={store.settings.schedulerEnabled ?? true}
+              aria-label="Background scheduler"
+              className={`toggle ${(store.settings.schedulerEnabled ?? true) ? "on" : ""}`}
+              onClick={() => {
+                const nextVal = !(store.settings.schedulerEnabled ?? true);
+                setting({ schedulerEnabled: nextVal });
+                notify(nextVal ? "Background scheduler enabled." : "Background scheduler paused.");
               }}
             >
               <span />

@@ -74,7 +74,13 @@ export type Store = {
   applications: Application[];
   companies: Company[];
   boards: Board[];
-  settings: { notifications: boolean; launchOnLogin: boolean; name: string };
+  settings: {
+    notifications: boolean;
+    launchOnLogin: boolean;
+    name: string;
+    followUpDays?: number;
+    schedulerEnabled?: boolean;
+  };
 };
 export const uid = () => crypto.randomUUID();
 export const isoDate = (offset = 0) => {
@@ -374,7 +380,13 @@ export function createSeed(): Store {
         color: "#ee702b",
       },
     ],
-    settings: { notifications: false, launchOnLogin: false, name: "Alex" },
+    settings: {
+      notifications: true,
+      launchOnLogin: true,
+      name: "Alex",
+      followUpDays: 7,
+      schedulerEnabled: true,
+    },
   };
 }
 export function readStore(): Store {
@@ -472,7 +484,9 @@ export function validStore(data: unknown): data is Store {
       !!s.settings &&
       text(s.settings.name) &&
       typeof s.settings.notifications === "boolean" &&
-      typeof s.settings.launchOnLogin === "boolean"
+      typeof s.settings.launchOnLogin === "boolean" &&
+      (s.settings.followUpDays === undefined || typeof s.settings.followUpDays === "number") &&
+      (s.settings.schedulerEnabled === undefined || typeof s.settings.schedulerEnabled === "boolean")
     );
   } catch {
     return false;

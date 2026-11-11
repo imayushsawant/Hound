@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Repository, deriveNextAction } from "../electron/main/db/repository.ts";
+import { Scheduler } from "../electron/main/scheduler.ts";
 import { deriveClientNextAction, nextAction, boardDue } from "../src/data.ts";
 import { seed } from "../scripts/seed.ts";
 
@@ -523,6 +524,77 @@ test("job boards CRUD operations and due status derivation", () => {
     const deleted = repo.deleteBoard(b1.id);
     assert.equal(deleted, true);
     assert.equal(repo.listBoards().length, 0);
+  } finally {
+    fixture.close();
+  }
+});
+
+test("scheduler checks due boards, follow-ups, and rounds with daily de-duplication", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+    const today = new Date().toISOString().slice(0, 10);
+    const tenDaysAgo = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+
+    // 1. Create a company
+    const company = repo.createCompany({ name: "NotifCorp" });
+
+    // 2. Create a board that is due
+    repo.createBoard({
+      name: "TechJobs",
+      url: "https://techjobs.com",
+      check_every_days: 7,
+      last_checked_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+    });
+
+    // 3. Create an application needing follow-up (applied 10 days ago, status Applied, updated = applied)
+    const app = repo.createApplication({
+      company_id: company.id,
+      role: "Platform Engineer",
+      status: "Applied",
+      applied_date: tenDaysAgo,
+    });
+    // Set updated_at back to match applied_date
+    repo.db.prepare("UPDATE applications SET updated_at = ? WHERE id = ?").run(tenDaysAgo, app.id);
+
+    // 4. Create an application with a round due today
+    const app2 = repo.createApplication({
+      company_id: company.id,
+      role: "Frontend Engineer",
+      status: "Interview",
+      applied_date: today,
+    });
+    repo.createRound({
+      application_id: app2.id,
+      type: "Technical",
+      scheduled_date: today,
+      status: "upcoming",
+    });
+
+    const notifications: { title: string; body: string }[] = [];
+    const scheduler = new Scheduler(repo, {
+      onFocusApp: () => {},
+      notify: (title, body) => {
+        notifications.push({ title, body });
+      },
+    });
+
+    // Run first check -> should find 1 board, 1 follow-up, 1 round
+    const res1 = scheduler.check();
+    assert.equal(res1.boardsCount, 1);
+    assert.equal(res1.followupsCount, 1);
+    assert.equal(res1.roundsCount, 1);
+    assert.equal(notifications.length, 3);
+    assert.ok(notifications.some((n) => n.title.includes("TechJobs")));
+    assert.ok(notifications.some((n) => n.title.includes("NotifCorp")));
+    assert.ok(notifications.some((n) => n.body.includes("Platform Engineer")));
+
+    // Run second check immediately -> deduplication prevents any repeats on same day!
+    const res2 = scheduler.check();
+    assert.equal(res2.boardsCount, 0);
+    assert.equal(res2.followupsCount, 0);
+    assert.equal(res2.roundsCount, 0);
+    assert.equal(notifications.length, 3); // No new notifications
   } finally {
     fixture.close();
   }

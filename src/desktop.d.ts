@@ -11,6 +11,7 @@ declare global {
       notify: (title: string, body: string) => void;
       onQuickAdd: (callback: () => void) => () => void;
       onDataChanged: (callback: () => void) => () => void;
+      onNavigateRoute?: (callback: (route: string) => void) => () => void;
     };
   }
 }
