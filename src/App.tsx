@@ -474,15 +474,30 @@ function App() {
           ) : company ? (
             <CompanyDetail
               company={company}
-              applications={store.applications.filter((a) => a.companyId === company.id)}
+              store={store}
               onBack={() => setSelectedCompany(null)}
               onOpen={openApp}
-              onSave={(patch) =>
+              onStage={(id, stage) => {
+                updateApplication(id, { stage });
+                notify("Application stage updated.");
+              }}
+              onSave={(patch) => {
+                if (patch.name && patch.name.trim().toLowerCase() !== company.name.trim().toLowerCase()) {
+                  const exists = store.companies.some(
+                    (c) => c.id !== company.id && c.name.trim().toLowerCase() === patch.name!.trim().toLowerCase(),
+                  );
+                  if (exists) {
+                    notify(`A company named "${patch.name.trim()}" already exists.`, true);
+                    return false;
+                  }
+                }
                 setStore((s) => ({
                   ...s,
                   companies: s.companies.map((c) => (c.id === company.id ? { ...c, ...patch } : c)),
-                }))
-              }
+                }));
+                notify("Company updated.");
+                return true;
+              }}
               onAdd={() => {
                 setNewCompany(company.name);
                 setModal("application");
@@ -640,7 +655,17 @@ function App() {
                     eyebrow="PLACES YOU COULD CALL YOUR OWN"
                     title="Your company shortlist"
                     description="Get to know the teams behind your next opportunity."
-                    action={addButton}
+                    action={
+                      <button
+                        className="button primary"
+                        onClick={() => {
+                          setNewCompany("");
+                          setModal("application");
+                        }}
+                      >
+                        <Plus size={16} /> New company
+                      </button>
+                    }
                   />
                   <div className="section-toolbar">
                     <label className="search-field">
@@ -651,43 +676,64 @@ function App() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                       />
-                      <kbd>⌕</kbd>
+                      {query ? (
+                        <button
+                          type="button"
+                          className="search-clear"
+                          onClick={() => setQuery("")}
+                          title="Clear search"
+                          aria-label="Clear search"
+                        >
+                          <X size={14} />
+                        </button>
+                      ) : (
+                        <kbd>⌕</kbd>
+                      )}
                     </label>
                     <span className="muted small">
-                      {store.companies.length} companies in your orbit
+                      {store.companies.length} {store.companies.length === 1 ? "company" : "companies"} in your orbit
                     </span>
                   </div>
                   <div className="companies-grid">
                     {store.companies
                       .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
-                      .map((c) => (
-                        <button
-                          className="company-card"
-                          key={c.id}
-                          onClick={() => openCompany(c.id)}
-                        >
-                          <div className="company-card-top">
-                            <CompanyLogo name={c.name} color={c.color} size={44} />
-                            <ArrowUpRight size={17} />
-                          </div>
-                          <h3>{c.name}</h3>
-                          <span className="company-domain">{c.domain || "Company profile"}</span>
-                          <p>
-                            {c.description ||
-                              "A new possibility. Add a company overview to get to know this team."}
-                          </p>
-                          <div className="company-card-footer">
-                            <span>
-                              <BriefcaseBusiness size={13} />
-                              {store.applications.filter((a) => a.companyId === c.id).length}{" "}
-                              applications
-                            </span>
-                            <span className="text-link">
-                              View company <ArrowRight size={13} />
-                            </span>
-                          </div>
-                        </button>
-                      ))}
+                      .map((c) => {
+                        const compApps = store.applications.filter((a) => a.companyId === c.id);
+                        const dates = compApps
+                          .map((a) => a.updated || a.applied)
+                          .filter(Boolean)
+                          .sort((d1, d2) => new Date(d2).getTime() - new Date(d1).getTime());
+                        const mostRecentActivity =
+                          dates.length > 0 ? relativeLastUpdated(dates[0]) : "No activity";
+                        return (
+                          <button
+                            className="company-card"
+                            key={c.id}
+                            onClick={() => openCompany(c.id)}
+                          >
+                            <div className="company-card-top">
+                              <CompanyLogo name={c.name} color={c.color} size={44} />
+                              <ArrowUpRight size={17} />
+                            </div>
+                            <h3>{c.name}</h3>
+                            <span className="company-domain">{c.domain || "Company profile"}</span>
+                            <p>
+                              {c.description ||
+                                "A new possibility. Add a company overview to get to know this team."}
+                            </p>
+                            <div className="company-card-footer">
+                              <span title="Total applications">
+                                <BriefcaseBusiness size={13} />
+                                {compApps.length} {compApps.length === 1 ? "application" : "applications"}
+                              </span>
+                              <span title="Most recent activity">
+                                <Clock3 size={13} />
+                                {mostRecentActivity}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
                   </div>
                   {!store.companies.some((c) =>
                     c.name.toLowerCase().includes(query.toLowerCase()),
@@ -999,6 +1045,7 @@ function ApplicationsTable({
   onStage,
   onAdd,
   compact = false,
+  companyId,
 }: {
   store: Store;
   query: string;
@@ -1007,6 +1054,7 @@ function ApplicationsTable({
   onStage: (id: string, stage: Stage) => void;
   onAdd: () => void;
   compact?: boolean;
+  companyId?: string;
 }) {
   const [tab, setTab] = useState("Active");
   const [includeInactive, setIncludeInactive] = useState(false);
@@ -1020,6 +1068,7 @@ function ApplicationsTable({
     () =>
       store.applications
         .filter((a) => {
+          if (companyId && a.companyId !== companyId) return false;
           const company = store.companies.find((c) => c.id === a.companyId);
           const companyName = company?.name || "";
           // By default on Dashboard: active applications exclude Rejected, Withdrawn, and Offer unless toggled
@@ -1074,10 +1123,19 @@ function ApplicationsTable({
       <div className="panel-title-row">
         <div>
           <h2>
-            {compact ? "Your applications" : "Application pipeline"}
-            <span className="small-count">{store.applications.length}</span>
+            {companyId
+              ? `Applications (${results.length})`
+              : compact
+                ? "Your applications"
+                : "Application pipeline"}
+            <span className="small-count">
+              {companyId
+                ? store.applications.filter((a) => a.companyId === companyId).length
+                : store.applications.length}
+            </span>
           </h2>
-          {compact && <p>Keep every opportunity moving forward.</p>}
+          {compact && !companyId && <p>Keep every opportunity moving forward.</p>}
+          {companyId && <p>All roles tracked at this company.</p>}
         </div>
         <button
           className="icon-button"
@@ -1088,18 +1146,23 @@ function ApplicationsTable({
         </button>
       </div>
       <div className="table-tabs">
-        {["Active", "All", "Archived"].map((t) => (
-          <button className={tab === t ? "selected" : ""} key={t} onClick={() => setTab(t)}>
-            {t}
-            <span>
-              {t === "All"
-                ? store.applications.length
-                : t === "Active"
-                  ? store.applications.filter(isActive).length
-                  : store.applications.filter((a) => !isActive(a)).length}
-            </span>
-          </button>
-        ))}
+        {["Active", "All", "Archived"].map((t) => {
+          const appList = companyId
+            ? store.applications.filter((a) => a.companyId === companyId)
+            : store.applications;
+          return (
+            <button className={tab === t ? "selected" : ""} key={t} onClick={() => setTab(t)}>
+              {t}
+              <span>
+                {t === "All"
+                  ? appList.length
+                  : t === "Active"
+                    ? appList.filter(isActive).length
+                    : appList.filter((a) => !isActive(a)).length}
+              </span>
+            </button>
+          );
+        })}
         <div className="table-view-label">
           <span className="view-table-icon">
             <i />
@@ -2455,24 +2518,51 @@ function Outcome({
 }
 function CompanyDetail({
   company,
-  applications,
+  store,
   onBack,
   onOpen,
   onSave,
+  onStage,
   onAdd,
 }: {
   company: Company;
-  applications: Application[];
+  store: Store;
   onBack: () => void;
   onOpen: (id: string) => void;
-  onSave: (patch: Partial<Company>) => void;
+  onSave: (patch: Partial<Company>) => boolean | void;
+  onStage: (id: string, stage: Stage) => void;
   onAdd: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [name, setName] = useState(company.name);
   const [overview, setOverview] = useState(company.description);
-  const [domain, setDomain] = useState(company.domain);
   const [notes, setNotes] = useState(company.notes);
-  const [saved, setSaved] = useState(false);
+  const [tableQuery, setTableQuery] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [savedOverview, setSavedOverview] = useState(false);
+  const [savedNotes, setSavedNotes] = useState(false);
+
+  useEffect(() => {
+    setName(company.name);
+    setOverview(company.description);
+    setNotes(company.notes);
+    setNameError("");
+  }, [company]);
+
+  const handleNameSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNameError("Company name cannot be empty.");
+      return;
+    }
+    const success = onSave({ name: trimmed });
+    if (success !== false) {
+      setEditingName(false);
+      setNameError("");
+    }
+  };
+
   return (
     <div className="detail-page">
       <button className="back-link" onClick={onBack}>
@@ -2483,7 +2573,59 @@ function CompanyDetail({
         <div className="detail-heading-main">
           <CompanyLogo name={company.name} color={company.color} size={58} />
           <div>
-            <h1>{company.name}</h1>
+            {editingName ? (
+              <form onSubmit={handleNameSubmit} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <input
+                    required
+                    autoFocus
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setNameError("");
+                    }}
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: 700,
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid #c07a4e",
+                      color: "#4a5141",
+                    }}
+                  />
+                  <button className="button primary" type="submit" style={{ padding: "5px 10px", fontSize: "11px" }}>
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={() => {
+                      setName(company.name);
+                      setEditingName(false);
+                      setNameError("");
+                    }}
+                    style={{ padding: "5px 10px", fontSize: "11px" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {nameError && (
+                  <span style={{ color: "#d9534f", fontSize: "11px", fontWeight: 500 }}>{nameError}</span>
+                )}
+              </form>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <h1>{company.name}</h1>
+                <button
+                  className="icon-button"
+                  aria-label="Rename company"
+                  title="Rename company"
+                  onClick={() => setEditingName(true)}
+                >
+                  <Settings2 size={16} />
+                </button>
+              </div>
+            )}
             {company.domain && (
               <a
                 className="text-link"
@@ -2502,108 +2644,86 @@ function CompanyDetail({
           Add application
         </button>
       </div>
+
       <div className="company-detail-grid">
         <section className="content-card">
           <div className="card-heading">
             <h2>Company overview</h2>
-            <button className="text-link" onClick={() => setEditing(!editing)}>
-              {editing ? "Cancel" : "Edit overview"}
-              <Settings2 size={14} />
-            </button>
+            {savedOverview && <span className="muted small" style={{ color: "#6c8452" }}>Saved</span>}
           </div>
-          {editing ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onSave({
-                  description: overview,
-                  domain: domain.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
-                });
-                setEditing(false);
-              }}
-            >
-              <label className="standalone-label">
-                Website domain
-                <input
-                  placeholder="company.com"
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                />
-              </label>
-              <label className="standalone-label">
-                Overview
-                <textarea rows={5} value={overview} onChange={(e) => setOverview(e.target.value)} />
-              </label>
-              <button className="button primary" type="submit">
-                Save overview
-              </button>
-            </form>
-          ) : (
-            <p className="company-overview">
-              {company.description ||
-                "A new company on your radar. Add an overview to keep what matters in one place."}
-            </p>
-          )}
-        </section>
-        <section className="content-card">
-          <MarkdownEditor
-            label="Your notes"
-            value={notes}
-            onChange={(v) => {
-              setNotes(v);
-              setSaved(false);
+          <p className="muted small" style={{ marginBottom: "10px" }}>
+            Add an overview to keep key context in one place.
+          </p>
+          <textarea
+            rows={5}
+            placeholder="What does this company do? Team culture, size, mission..."
+            value={overview}
+            onChange={(e) => {
+              setOverview(e.target.value);
+              setSavedOverview(false);
             }}
+            style={{ width: "100%", resize: "vertical" }}
           />
-          <div className="form-save">
+          <div className="form-save" style={{ marginTop: "10px" }}>
             <button
               className="button secondary"
+              type="button"
               onClick={() => {
-                onSave({ notes });
-                setSaved(true);
+                onSave({ description: overview });
+                setSavedOverview(true);
               }}
             >
               <Check size={14} />
-              {saved ? "Saved" : "Save notes"}
+              Save overview
+            </button>
+          </div>
+        </section>
+
+        <section className="content-card">
+          <div className="card-heading">
+            <h2>Your notes</h2>
+            {savedNotes && <span className="muted small" style={{ color: "#6c8452" }}>Saved</span>}
+          </div>
+          <p className="muted small" style={{ marginBottom: "10px" }}>
+            Thoughts, interviewers, referrals, or preparation ideas.
+          </p>
+          <textarea
+            rows={5}
+            placeholder="Private notes about this company..."
+            value={notes}
+            onChange={(e) => {
+              setNotes(e.target.value);
+              setSavedNotes(false);
+            }}
+            style={{ width: "100%", resize: "vertical" }}
+          />
+          <div className="form-save" style={{ marginTop: "10px" }}>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={() => {
+                onSave({ notes });
+                setSavedNotes(true);
+              }}
+            >
+              <Check size={14} />
+              Save notes
             </button>
           </div>
         </section>
       </div>
-      <section className="content-card company-applications">
-        <div className="card-heading">
-          <h2>
-            Applications at {company.name}
-            <span className="small-count">{applications.length}</span>
-          </h2>
-          <span className="muted small">Different roles. More possibilities.</span>
-        </div>
-        {applications.map((a) => (
-          <button className="company-application-row" onClick={() => onOpen(a.id)} key={a.id}>
-            <span className="company-application-icon">
-              <BriefcaseBusiness size={18} />
-            </span>
-            <div>
-              <h3>{a.role}</h3>
-              <span>
-                {a.location || "Location not specified"} · {a.mode}
-              </span>
-            </div>
-            <StageBadge stage={a.stage} />
-            <span className="muted small">Applied {formatDate(a.applied)}</span>
-            <ChevronRight size={17} />
-          </button>
-        ))}
-        {!applications.length && (
-          <Empty
-            title="No applications just yet"
-            description="Found a role that feels right? Add it here."
-            action={
-              <button className="button secondary" onClick={onAdd}>
-                Add application
-              </button>
-            }
-          />
-        )}
-      </section>
+
+      <div style={{ marginTop: "24px" }}>
+        <ApplicationsTable
+          store={store}
+          query={tableQuery}
+          onQuery={setTableQuery}
+          onOpen={onOpen}
+          onStage={onStage}
+          onAdd={onAdd}
+          companyId={company.id}
+        />
+      </div>
     </div>
   );
 }
