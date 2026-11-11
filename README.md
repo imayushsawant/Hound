@@ -73,16 +73,35 @@ npm run build
 
 ---
 
-## Building the Installer
+## Installing Hound
+
+### From GitHub Releases (Recommended for Users)
+
+1. Go to the [Releases](https://github.com/imayushsawant/Hound/releases) page on GitHub.
+2. Download the latest installer: **`Hound-Setup-1.0.0.exe`** (or portable archive **`Hound-1.0.0-win.zip`**).
+3. Run the installer and follow the setup wizard:
+   - Installs Hound into your local apps directory.
+   - Automatically creates Desktop and Start Menu shortcuts.
+4. *Note on Windows SmartScreen*: Since Hound is an independent open-source project without an enterprise digital signing certificate, Windows Defender SmartScreen may display *"Windows protected your PC"*. Click **More info** → **Run anyway** to proceed with installation.
+
+---
+
+## Building the Installer Locally
 
 Hound uses `electron-builder` to package standalone desktop installers.
 
 ```sh
-# Compile app and create Windows NSIS installer
+# Compile app and package Windows NSIS installer & portable distribution
 npm run dist:win
 ```
 
-The resulting installer (`Hound Setup 1.0.0.exe`) will be generated inside the `dist/` directory.
+The resulting installer (`Hound-Setup-1.0.0.exe`) and portable archive (`Hound-1.0.0-win.zip`) will be generated inside the `release/` directory.
+
+### Automated Cloud Releases (GitHub Actions)
+
+This repository includes a ready-to-run GitHub Actions workflow (`.github/workflows/release.yml`):
+- Pushing any version tag (e.g., `git tag v1.0.0 && git push origin v1.0.0`) automatically builds `Hound-Setup-1.0.0.exe` on a clean Windows runner and publishes a new GitHub Release with installer binaries attached.
+- You can also manually trigger a release from the **Actions** tab on GitHub by clicking **Run workflow**.
 
 ---
 

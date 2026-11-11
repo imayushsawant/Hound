@@ -12,15 +12,18 @@ asarUnpack:
   - node_modules/better-sqlite3/**/*
 win:
   target:
+    - target: nsis
+      arch: [x64]
     - target: zip
       arch: [x64]
-    - target: dir
-      arch: [x64]
   icon: public/hound.png
+  artifactName: "${productName}-Setup-${version}.${ext}"
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Hound
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
 mac:
   target: dmg
   category: public.app-category.productivity
