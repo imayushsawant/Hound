@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Hound — Your next chapter",
+  "author": "Hound",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
