@@ -458,9 +458,24 @@ function App() {
           {app ? (
             <ApplicationDetail
               application={app}
-              company={store.companies.find((c) => c.id === app.companyId)!}
+              company={
+                store.companies.find((c) => c.id === app.companyId) || {
+                  id: app.companyId,
+                  name: "Company",
+                  domain: "",
+                  color: "#6c8452",
+                  description: "",
+                  notes: "",
+                }
+              }
               onBack={() => setSelectedApp(null)}
               onUpdate={(patch) => updateApplication(app.id, patch)}
+              onUpdateCompany={(patch) => {
+                setStore((s) => ({
+                  ...s,
+                  companies: s.companies.map((c) => (c.id === app.companyId ? { ...c, ...patch } : c)),
+                }));
+              }}
               onCompany={() => openCompany(app.companyId)}
               onDelete={() => {
                 setStore((s) => ({
@@ -1900,11 +1915,19 @@ function MarkdownEditor({
     </div>
   );
 }
+function formatExternalUrl(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function ApplicationDetail({
   application: a,
   company,
   onBack,
   onUpdate,
+  onUpdateCompany,
   onCompany,
   onDelete,
 }: {
@@ -1912,40 +1935,131 @@ function ApplicationDetail({
   company: Company;
   onBack: () => void;
   onUpdate: (patch: Partial<Application>) => void;
+  onUpdateCompany: (patch: Partial<Company>) => void;
   onCompany: () => void;
   onDelete: () => void;
 }) {
-  const [tab, setTab] = useState("Overview");
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(a);
-  const [roundEditor, setRoundEditor] = useState<Round | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const set = (key: keyof Application, value: string) => setDraft((s) => ({ ...s, [key]: value }));
+
+  // Overview fields
+  const [role, setRole] = useState(a.role);
+  const [location, setLocation] = useState(a.location);
+  const [mode, setMode] = useState(a.mode);
+  const [source, setSource] = useState(a.source);
+  const [url, setUrl] = useState(a.url);
+  const [applied, setApplied] = useState(a.applied);
+  const [stage, setStage] = useState(a.stage);
+  const [resume, setResume] = useState(a.resume);
+  const [companyOverview, setCompanyOverview] = useState(company.description || "");
+
+  // Outcome fields
+  const [offer, setOffer] = useState(a.offer || "");
+  const [joining, setJoining] = useState(a.joining || "");
+  const [rejection, setRejection] = useState(a.rejection || "");
+
+  // Saved indicators
+  const [overviewSaved, setOverviewSaved] = useState(false);
+  const [outcomeSaved, setOutcomeSaved] = useState(false);
+  const overviewTimerRef = useRef<any>(null);
+  const outcomeTimerRef = useRef<any>(null);
+
+  const triggerOverviewSaved = () => {
+    setOverviewSaved(true);
+    if (overviewTimerRef.current) clearTimeout(overviewTimerRef.current);
+    overviewTimerRef.current = setTimeout(() => setOverviewSaved(false), 2000);
+  };
+
+  const triggerOutcomeSaved = () => {
+    setOutcomeSaved(true);
+    if (outcomeTimerRef.current) clearTimeout(outcomeTimerRef.current);
+    outcomeTimerRef.current = setTimeout(() => setOutcomeSaved(false), 2000);
+  };
+
   useEffect(() => {
-    setDraft(a);
-  }, [a]);
-  const addRound = () =>
-    setRoundEditor({
-      id: uid(),
-      type: "Technical",
-      date: `${isoDate(1)}T10:00`,
-      status: "Upcoming",
-      nextAction: "",
-      resume: a.resume,
-      prep: "",
-      notes: "",
-    });
+    setRole(a.role);
+    setLocation(a.location);
+    setMode(a.mode);
+    setSource(a.source);
+    setUrl(a.url);
+    setApplied(a.applied);
+    setStage(a.stage);
+    setResume(a.resume);
+    setCompanyOverview(company.description || "");
+    setOffer(a.offer || "");
+    setJoining(a.joining || "");
+    setRejection(a.rejection || "");
+  }, [a, company]);
+
+  const handleOverviewBlur = (field: keyof Application, value: string, original: string) => {
+    if (value !== original) {
+      onUpdate({ [field]: value });
+      triggerOverviewSaved();
+    }
+  };
+
+  const handleOutcomeBlur = (field: keyof Application, value: string, original: string) => {
+    if (value !== original) {
+      onUpdate({ [field]: value });
+      triggerOutcomeSaved();
+    }
+  };
+
+  const handleCompanyOverviewBlur = () => {
+    const original = company.description || "";
+    if (companyOverview !== original) {
+      onUpdateCompany({ description: companyOverview });
+      triggerOverviewSaved();
+    }
+  };
+
+  // Aggregated technical topics from all rounds (read-only)
+  const aggregatedTopics = useMemo(() => {
+    const list: string[] = [];
+    for (const r of a.rounds || []) {
+      const raw = (r as any).topics || (r as any).topics_asked || "";
+      if (raw && typeof raw === "string") {
+        const parts = raw.split(/[\n,;]+/).map((s: string) => s.trim()).filter(Boolean);
+        list.push(...parts);
+      }
+    }
+    if (a.topics && typeof a.topics === "string") {
+      const parts = a.topics.split(/[\n,;]+/).map((s: string) => s.trim()).filter(Boolean);
+      list.push(...parts);
+    }
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const t of list) {
+      const lower = t.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        unique.push(t);
+      }
+    }
+    return unique;
+  }, [a.rounds, a.topics]);
+
   return (
-    <div className="detail-page">
-      <button className="back-link" onClick={onBack}>
-        <ArrowLeft size={15} />
-        Back to applications
-      </button>
+    <div className="detail-page application-detail-scrollable">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <button className="back-link" onClick={onBack}>
+          <ArrowLeft size={15} />
+          Back to applications
+        </button>
+        <button
+          className="button secondary danger-hover"
+          onClick={() => setDeleteConfirm(true)}
+          style={{ fontSize: "12px", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+        >
+          <Trash2 size={14} />
+          Delete application
+        </button>
+      </div>
+
       <div className="detail-heading">
         <div className="detail-heading-main">
           <CompanyLogo name={company.name} color={company.color} size={58} />
           <div>
-            <button className="company-name-link" onClick={onCompany}>
+            <button className="company-name-link" onClick={onCompany} title="Go to company page">
               {company.name}
               <ArrowUpRight size={13} />
             </button>
@@ -1963,349 +2077,382 @@ function ApplicationDetail({
                 <CalendarDays size={14} />
                 Applied {formatDate(a.applied)}
               </span>
+              <span>
+                <Clock3 size={14} />
+                Updated {relativeLastUpdated(a.updated || a.applied)}
+              </span>
             </div>
           </div>
         </div>
-        <StageBadge stage={a.stage} onChange={(stage) => onUpdate({ stage })} />
+        <StageBadge
+          stage={a.stage}
+          onChange={(newStage) => {
+            setStage(newStage);
+            onUpdate({ stage: newStage });
+            triggerOverviewSaved();
+          }}
+        />
       </div>
-      <div className="detail-tabs">
-        {["Overview", "Rounds & timeline", "Outcome"].map((t) => (
-          <button className={tab === t ? "selected" : ""} key={t} onClick={() => setTab(t)}>
-            {t}
-            {t === "Rounds & timeline" && <span className="small-count">{a.rounds.length}</span>}
-          </button>
-        ))}
-      </div>
-      {tab === "Overview" && (
-        <div className="detail-grid">
-          <div className="detail-main">
-            <section className="content-card">
-              <div className="card-heading">
-                <h2>Application overview</h2>
-                <button
-                  className="text-link"
-                  onClick={() => {
-                    setEditing(!editing);
-                    setDraft(a);
-                  }}
-                >
-                  {editing ? "Cancel editing" : "Edit details"}
-                  <Settings2 size={14} />
-                </button>
-              </div>
-              {editing ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    onUpdate(draft);
-                    setEditing(false);
-                  }}
-                >
-                  <div className="form-grid">
-                    <label>
-                      Role
-                      <input
-                        required
-                        value={draft.role}
-                        onChange={(e) => set("role", e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Location
-                      <input
-                        value={draft.location}
-                        onChange={(e) => set("location", e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Work mode
-                      <select value={draft.mode} onChange={(e) => set("mode", e.target.value)}>
-                        <option>Full-time</option>
-                        <option>Internship</option>
-                      </select>
-                    </label>
-                    <label>
-                      Source
-                      <input value={draft.source} onChange={(e) => set("source", e.target.value)} />
-                    </label>
-                    <label>
-                      Applied date
-                      <input
-                        type="date"
-                        required
-                        value={draft.applied}
-                        onChange={(e) => set("applied", e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Resume used
-                      <input value={draft.resume} onChange={(e) => set("resume", e.target.value)} />
-                    </label>
-                    <label className="full-width">
-                      Posting URL
-                      <input
-                        type="url"
-                        value={draft.url}
-                        onChange={(e) => set("url", e.target.value)}
-                      />
-                    </label>
-                    <label className="full-width">
-                      Manual next action
-                      <input
-                        placeholder="Leave blank to derive from rounds and follow-ups"
-                        value={draft.nextAction}
-                        onChange={(e) => set("nextAction", e.target.value)}
-                      />
-                      <small>A manual value takes priority over automatic next actions.</small>
-                    </label>
-                  </div>
-                  <div className="form-save">
-                    <button className="button primary" type="submit">
-                      <Check size={15} />
-                      Save changes
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <dl className="overview-details">
-                  {[
-                    ["Role", a.role],
-                    ["Location", a.location || "Not specified"],
-                    ["Work mode", a.mode],
-                    ["Source", a.source],
-                    [
-                      "Applied date",
-                      formatDate(a.applied, { month: "long", day: "numeric", year: "numeric" }),
-                    ],
-                    ["Resume used", a.resume || "Not added"],
-                  ].map(([label, val]) => (
-                    <div key={label}>
-                      <dt>{label}</dt>
-                      <dd>
-                        {label === "Resume used" && <FileText size={14} />} {val}
-                      </dd>
-                    </div>
-                  ))}
-                  <div className="full-width">
-                    <dt>Job posting</dt>
-                    <dd>
-                      {a.url ? (
-                        <a className="text-link" href={a.url} target="_blank" rel="noreferrer">
-                          {a.url}
-                          <ExternalLink size={13} />
-                        </a>
-                      ) : (
-                        "Not added"
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-              )}
-            </section>
-            <section className="content-card">
-              <div className="card-heading">
-                <h2>About {company.name}</h2>
-                <button className="text-link" onClick={onCompany}>
-                  Company page
-                  <ArrowUpRight size={14} />
-                </button>
-              </div>
-              <p className="company-overview">
-                {company.description ||
-                  "Get to know this team. Add an overview on the company page."}
-              </p>
-              {company.domain && (
-                <a
-                  className="text-link"
-                  href={`https://${company.domain}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Globe size={14} />
-                  {company.domain}
-                  <ExternalLink size={12} />
-                </a>
-              )}
-            </section>
-          </div>
-          <aside>
-            <section className="content-card next-step-card">
-              <span className="stat-icon peach">
-                <Zap size={18} />
-              </span>
-              <h3>Your next small step</h3>
-              <p>{nextAction(a)}</p>
-              <small>
-                {a.nextAction
-                  ? "Set by you. Edit details to change it."
-                  : "Automatically based on your timeline."}
-              </small>
-              <button className="text-link warm" onClick={() => setTab("Rounds & timeline")}>
-                View timeline
-                <ArrowRight size={14} />
-              </button>
-            </section>
-            <section className="content-card detail-activity">
-              <h3>At a glance</h3>
-              <div>
-                <span>Added to your journey</span>
-                <strong>{formatDate(a.applied)}</strong>
-              </div>
-              <div>
-                <span>Last updated</span>
-                <strong>{dayLabel(a.updated)}</strong>
-              </div>
-              <div>
-                <span>Interview rounds</span>
-                <strong>{a.rounds.length}</strong>
-              </div>
-            </section>
-            <button className="delete-application" onClick={() => setDeleteConfirm(true)}>
-              <Trash2 size={13} />
-              Delete application
-            </button>
-          </aside>
-        </div>
-      )}
-      {tab === "Rounds & timeline" && (
-        <section className="content-card timeline-card">
+
+      <div className="detail-scroll-content" style={{ display: "flex", flexDirection: "column", gap: "24px", marginTop: "24px" }}>
+        {/* SECTION 1: OVERVIEW */}
+        <section className="content-card">
           <div className="card-heading">
             <div>
-              <h2>Every conversation, in one place.</h2>
-              <p className="muted small">Prepare thoughtfully. Reflect while it’s fresh.</p>
+              <h2>Application overview</h2>
+              <p className="muted small">Core application details. Autosaves on blur.</p>
             </div>
-            <button className="button primary" onClick={addRound}>
-              <Plus size={15} />
-              Add round
-            </button>
-          </div>
-          <div className="timeline">
-            <div className="timeline-item applied-event">
-              <span className="timeline-marker">
-                <Check size={15} />
+            {overviewSaved && (
+              <span className="saved-badge">
+                <Check size={13} /> Saved
               </span>
-              <div>
-                <span className="timeline-date">{formatDate(a.applied)}</span>
-                <h3>Application sent</h3>
-                <p>Your next chapter started with a click.</p>
-              </div>
-            </div>
-            {a.rounds
-              .slice()
-              .sort((x, y) => x.date.localeCompare(y.date))
-              .map((r, i) => (
-                <div className={`timeline-item ${r.status.toLowerCase()}`} key={r.id}>
-                  <span className="timeline-marker">
-                    {r.status === "Completed" ? (
-                      <Check size={15} />
-                    ) : r.status === "Cancelled" ? (
-                      <X size={15} />
-                    ) : (
-                      <CalendarDays size={15} />
-                    )}
-                  </span>
-                  <div className="timeline-round">
-                    <div className="timeline-round-top">
-                      <div>
-                        <span className="timeline-date">
-                          {formatDate(r.date)} ·{" "}
-                          {new Date(r.date).toLocaleTimeString([], {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                        <h3>
-                          {r.type} <span className="round-number">Round {i + 1}</span>
-                        </h3>
-                      </div>
-                      <span className={`round-status ${r.status.toLowerCase()}`}>{r.status}</span>
-                      <button
-                        className="button secondary small-button"
-                        onClick={() => setRoundEditor(r)}
-                      >
-                        Edit round
-                      </button>
-                    </div>
-                    {r.nextAction && (
-                      <p className="round-action">
-                        <ArrowRight size={13} />
-                        {r.nextAction}
-                      </p>
-                    )}
-                    {r.prep && (
-                      <div className="timeline-note">
-                        <strong>PREP NOTES</strong>
-                        <div className="markdown-preview">
-                          <ReactMarkdown>{r.prep}</ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-                    {r.notes && (
-                      <div className="timeline-note">
-                        <strong>INTERVIEW NOTES</strong>
-                        <div className="markdown-preview">
-                          <ReactMarkdown>{r.notes}</ReactMarkdown>
-                        </div>
-                      </div>
-                    )}
-                    {r.resume && (
-                      <span className="round-resume">
-                        <FileText size={13} />
-                        {r.resume}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+            )}
           </div>
-          {!a.rounds.length && (
-            <Empty
-              title="Your story is still unfolding"
-              description="Add an assessment, interview, or follow-up to start your timeline."
-              action={
-                <button className="button secondary" onClick={addRound}>
-                  <Plus size={15} />
-                  Add your first round
-                </button>
-              }
-            />
-          )}
+          <div className="form-grid">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "11px", fontWeight: 500, color: "#8a9879" }}>
+              <span>Company</span>
+              <button
+                type="button"
+                className="company-name-link"
+                onClick={onCompany}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginTop: "4px",
+                }}
+              >
+                <CompanyLogo name={company.name} color={company.color} size={22} />
+                {company.name}
+                <ArrowUpRight size={13} />
+              </button>
+            </div>
+
+            <label>
+              Role
+              <input
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                onBlur={() => handleOverviewBlur("role", role, a.role)}
+                placeholder="e.g. Senior Software Engineer"
+              />
+            </label>
+
+            <label>
+              Location
+              <input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onBlur={() => handleOverviewBlur("location", location, a.location)}
+                placeholder="e.g. San Francisco, CA or Remote"
+              />
+            </label>
+
+            <label>
+              Work mode
+              <select
+                value={mode}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setMode(val);
+                  onUpdate({ mode: val });
+                  triggerOverviewSaved();
+                }}
+              >
+                <option value="Full-time">Full-time</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </label>
+
+            <label>
+              Source
+              <input
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                onBlur={() => handleOverviewBlur("source", source, a.source)}
+                placeholder="e.g. LinkedIn, Referral, Careers page"
+              />
+            </label>
+
+            <label>
+              Posting URL
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onBlur={() => handleOverviewBlur("url", url, a.url)}
+                  placeholder="https://..."
+                  style={{ flex: 1 }}
+                />
+                {url ? (
+                  <a
+                    href={formatExternalUrl(url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button secondary icon-button"
+                    title="Open posting in system browser"
+                    aria-label="Open posting in system browser"
+                    style={{ padding: "8px", height: "36px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                  >
+                    <ExternalLink size={15} />
+                  </a>
+                ) : null}
+              </div>
+            </label>
+
+            <label>
+              Applied date
+              <input
+                type="date"
+                value={applied}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setApplied(val);
+                  onUpdate({ applied: val });
+                  triggerOverviewSaved();
+                }}
+                onBlur={() => handleOverviewBlur("applied", applied, a.applied)}
+              />
+            </label>
+
+            <label>
+              Status
+              <select
+                value={stage}
+                onChange={(e) => {
+                  const val = e.target.value as Stage;
+                  setStage(val);
+                  onUpdate({ stage: val });
+                  triggerOverviewSaved();
+                }}
+              >
+                {stages.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Resume used
+              <input
+                value={resume}
+                onChange={(e) => setResume(e.target.value)}
+                onBlur={() => handleOverviewBlur("resume", resume, a.resume)}
+                placeholder="e.g. Resume_SWE_2026.pdf"
+              />
+            </label>
+
+            <label className="full-width">
+              Company overview (shared with company record)
+              <textarea
+                rows={4}
+                value={companyOverview}
+                onChange={(e) => setCompanyOverview(e.target.value)}
+                onBlur={handleCompanyOverviewBlur}
+                placeholder="What does this company do? Team culture, size, mission..."
+                style={{ resize: "vertical" }}
+              />
+            </label>
+          </div>
         </section>
-      )}
-      {tab === "Outcome" && <Outcome application={a} onSave={onUpdate} />}
-      {roundEditor && (
-        <RoundModal
-          round={roundEditor}
-          onClose={() => setRoundEditor(null)}
-          onSave={(round) => {
-            onUpdate({
-              rounds: a.rounds.some((r) => r.id === round.id)
-                ? a.rounds.map((r) => (r.id === round.id ? round : r))
-                : [...a.rounds, round],
-            });
-            setRoundEditor(null);
-          }}
-          onDelete={
-            a.rounds.some((r) => r.id === roundEditor.id)
-              ? () => {
-                  onUpdate({ rounds: a.rounds.filter((r) => r.id !== roundEditor.id) });
-                  setRoundEditor(null);
-                }
-              : undefined
-          }
-        />
-      )}
+
+        {/* SECTION 2: PLACEHOLDER AREA FOR ROUNDS (NEXT PROMPT) */}
+        <section className="content-card rounds-placeholder-card">
+          <div className="card-heading">
+            <div>
+              <h2>Rounds & timeline</h2>
+              <p className="muted small">Ordered rounds, interview notes, and timeline.</p>
+            </div>
+            <span className="small-count">{a.rounds.length} {a.rounds.length === 1 ? "round" : "rounds"}</span>
+          </div>
+          <div
+            style={{
+              padding: "28px 20px",
+              textAlign: "center",
+              border: "1px dashed #d5dec7",
+              borderRadius: "8px",
+              background: "#fafbf9",
+              color: "#8a9879",
+            }}
+          >
+            <Clock3 size={24} style={{ marginBottom: "8px", color: "#a5b493" }} />
+            <h3 style={{ fontSize: "14px", fontWeight: 600, color: "#687b55", marginBottom: "4px" }}>
+              Rounds & Timeline
+            </h3>
+            <p className="muted small" style={{ maxWidth: "440px", margin: "0 auto" }}>
+              Interactive rounds timeline, Markdown notes editor, and round ordering will be configured here in the next step.
+            </p>
+            {a.rounds.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  justifyContent: "center",
+                  marginTop: "16px",
+                }}
+              >
+                {a.rounds.map((r, i) => (
+                  <span
+                    key={r.id || i}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 12px",
+                      background: "#ffffff",
+                      border: "1px solid #e3e8da",
+                      borderRadius: "6px",
+                      fontSize: "11px",
+                      color: "#687b55",
+                    }}
+                  >
+                    <strong>{r.type}</strong>
+                    <span className="muted">·</span>
+                    <span>{r.date ? formatDate(r.date) : "No date"}</span>
+                    <span className="muted">·</span>
+                    <span className={`round-status ${r.status?.toLowerCase()}`}>{r.status}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION 3: OUTCOME */}
+        <section className="content-card outcome-card">
+          <div className="card-heading">
+            <div>
+              <h2>Outcome</h2>
+              <p className="muted small">Package details, decisions, and technical topics asked.</p>
+            </div>
+            {outcomeSaved && (
+              <span className="saved-badge">
+                <Check size={13} /> Saved
+              </span>
+            )}
+          </div>
+
+          {stage === "Offer" && (
+            <div className="form-grid">
+              <label className="full-width">
+                Offer package
+                <textarea
+                  rows={3}
+                  value={offer}
+                  onChange={(e) => setOffer(e.target.value)}
+                  onBlur={() => handleOutcomeBlur("offer", offer, a.offer)}
+                  placeholder="Base salary, equity, signing bonus, benefits, and notes..."
+                  style={{ resize: "vertical" }}
+                />
+              </label>
+              <label>
+                Joining date
+                <input
+                  type="date"
+                  value={joining}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setJoining(val);
+                    onUpdate({ joining: val });
+                    triggerOutcomeSaved();
+                  }}
+                  onBlur={() => handleOutcomeBlur("joining", joining, a.joining)}
+                />
+              </label>
+            </div>
+          )}
+
+          {stage === "Rejected" && (
+            <div className="form-grid">
+              <label className="full-width">
+                Rejection reason
+                <textarea
+                  rows={3}
+                  value={rejection}
+                  onChange={(e) => setRejection(e.target.value)}
+                  onBlur={() => handleOutcomeBlur("rejection", rejection, a.rejection)}
+                  placeholder="Feedback, interviewer notes, or reasons provided..."
+                  style={{ resize: "vertical" }}
+                />
+              </label>
+            </div>
+          )}
+
+          {stage !== "Offer" && stage !== "Rejected" && (
+            <div
+              style={{
+                padding: "12px 16px",
+                background: "#f8faf5",
+                borderRadius: "6px",
+                border: "1px solid #e7ede0",
+                marginBottom: "16px",
+              }}
+            >
+              <p className="muted small" style={{ margin: 0 }}>
+                Offer fields appear when status is <strong>Offer</strong>, and rejection reason appears when status is <strong>Rejected</strong>.
+              </p>
+            </div>
+          )}
+
+          {/* Technical topics asked (aggregated read-only from all rounds) */}
+          <div style={{ marginTop: "16px", borderTop: "1px solid #edf1e7", paddingTop: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <h3 style={{ fontSize: "12px", fontWeight: 600, color: "#687b55", margin: 0 }}>
+                Technical topics asked
+              </h3>
+              <span className="muted small" style={{ fontSize: "10px" }}>Aggregated from all rounds (read-only)</span>
+            </div>
+            {aggregatedTopics.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                {aggregatedTopics.map((topic, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: "4px 9px",
+                      background: "#f0f4ea",
+                      border: "1px solid #dbe4d1",
+                      borderRadius: "5px",
+                      fontSize: "11px",
+                      color: "#4e603e",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {topic}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="muted small" style={{ fontStyle: "italic", margin: "6px 0 0" }}>
+                No technical topics recorded across interview rounds yet.
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+
       {deleteConfirm && (
         <ModalFrame
-          title="Remove this application?"
-          subtitle="This application and all of its interview notes will be permanently removed. The company will stay in your shortlist."
+          title="Delete this application?"
+          subtitle={`Are you sure you want to permanently delete the application for "${a.role}" at ${company.name}? This action cannot be undone.`}
           onClose={() => setDeleteConfirm(false)}
         >
-          <div className="confirm-actions">
+          <div className="confirm-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
             <button className="button secondary" onClick={() => setDeleteConfirm(false)}>
               Keep application
             </button>
-            <button className="button danger" onClick={onDelete}>
+            <button
+              className="button danger"
+              onClick={() => {
+                setDeleteConfirm(false);
+                onDelete();
+              }}
+            >
               <Trash2 size={15} />
               Delete application
             </button>
@@ -2313,207 +2460,6 @@ function ApplicationDetail({
         </ModalFrame>
       )}
     </div>
-  );
-}
-function RoundModal({
-  round,
-  onClose,
-  onSave,
-  onDelete,
-}: {
-  round: Round;
-  onClose: () => void;
-  onSave: (r: Round) => void;
-  onDelete?: () => void;
-}) {
-  const [draft, setDraft] = useState(round);
-  const set = (key: keyof Round, value: string) => setDraft((s) => ({ ...s, [key]: value }));
-  return (
-    <ModalFrame
-      wide
-      title={onDelete ? "Make the most of this round." : "Your next conversation."}
-      subtitle="A little preparation makes a big difference."
-      onClose={onClose}
-    >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSave(draft);
-        }}
-      >
-        <div className="form-grid">
-          <label>
-            Round type
-            <select value={draft.type} onChange={(e) => set("type", e.target.value)}>
-              {roundTypes.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Date & time
-            <input
-              type="datetime-local"
-              required
-              value={draft.date}
-              onChange={(e) => set("date", e.target.value)}
-            />
-          </label>
-          <label>
-            Status
-            <select value={draft.status} onChange={(e) => set("status", e.target.value)}>
-              <option>Upcoming</option>
-              <option>Completed</option>
-              <option>Cancelled</option>
-            </select>
-          </label>
-          <label>
-            Resume used
-            <input value={draft.resume} onChange={(e) => set("resume", e.target.value)} />
-          </label>
-          <label className="full-width">
-            Next action
-            <input
-              placeholder="e.g. Review React performance patterns"
-              value={draft.nextAction}
-              onChange={(e) => set("nextAction", e.target.value)}
-            />
-          </label>
-          <div className="full-width">
-            <MarkdownEditor
-              label="Prep notes"
-              value={draft.prep}
-              onChange={(v) => set("prep", v)}
-              placeholder="## Before the conversation&#10;- Topics to review&#10;- Questions to ask"
-            />
-          </div>
-          <div className="full-width">
-            <MarkdownEditor
-              label="Interview notes"
-              value={draft.notes}
-              onChange={(v) => set("notes", v)}
-              placeholder="What came up? How did it go? What would you do differently?"
-            />
-          </div>
-        </div>
-        <div className="modal-footer">
-          {onDelete ? (
-            <button
-              type="button"
-              className="text-link danger-text"
-              onClick={() => {
-                if (confirm("Delete this round and its notes?")) onDelete();
-              }}
-            >
-              <Trash2 size={14} />
-              Delete round
-            </button>
-          ) : (
-            <span>
-              <ShieldCheck size={13} />
-              Just for you
-            </span>
-          )}
-          <div>
-            <button type="button" className="button secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="button primary">
-              <Check size={15} />
-              Save round
-            </button>
-          </div>
-        </div>
-      </form>
-    </ModalFrame>
-  );
-}
-function Outcome({
-  application,
-  onSave,
-}: {
-  application: Application;
-  onSave: (patch: Partial<Application>) => void;
-}) {
-  const [draft, setDraft] = useState(application);
-  const [saved, setSaved] = useState(false);
-  return (
-    <form
-      className="content-card outcome-card"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSave({
-          offer: draft.offer,
-          joining: draft.joining,
-          rejection: draft.rejection,
-          topics: draft.topics,
-        });
-        setSaved(true);
-      }}
-    >
-      <div className="card-heading">
-        <div>
-          <h2>Every experience brings something.</h2>
-          <p className="muted small">Capture the outcome, and what you learned along the way.</p>
-        </div>
-        <span className="stat-icon green">
-          <Target size={20} />
-        </span>
-      </div>
-      <div className="form-grid">
-        <label className="full-width">
-          Offer package
-          <textarea
-            rows={3}
-            placeholder="Base salary, equity, signing bonus, and the little extras..."
-            value={draft.offer}
-            onChange={(e) => {
-              setDraft((s) => ({ ...s, offer: e.target.value }));
-              setSaved(false);
-            }}
-          />
-        </label>
-        <label>
-          Joining date
-          <input
-            type="date"
-            value={draft.joining}
-            onChange={(e) => {
-              setDraft((s) => ({ ...s, joining: e.target.value }));
-              setSaved(false);
-            }}
-          />
-        </label>
-        <label>
-          Rejection reason
-          <input
-            placeholder="If things didn’t work out, what happened?"
-            value={draft.rejection}
-            onChange={(e) => {
-              setDraft((s) => ({ ...s, rejection: e.target.value }));
-              setSaved(false);
-            }}
-          />
-        </label>
-        <div className="full-width">
-          <MarkdownEditor
-            label="Technical topics asked"
-            value={draft.topics}
-            onChange={(v) => {
-              setDraft((s) => ({ ...s, topics: v }));
-              setSaved(false);
-            }}
-            placeholder="- React rendering and hooks&#10;- System design trade-offs&#10;- Data structures and algorithms"
-          />
-        </div>
-      </div>
-      <div className="form-save">
-        <button className="button primary" type="submit">
-          <Check size={15} />
-          {saved ? "Saved" : "Save outcome"}
-        </button>
-      </div>
-    </form>
   );
 }
 function CompanyDetail({
