@@ -3620,6 +3620,7 @@ kbd {
 
   .content-card,
   .table-card,
+  .applications-panel,
   .side-panel,
   .timeline-round-item,
   .detail-page,
@@ -3633,6 +3634,573 @@ kbd {
     background: #181d16 !important;
     border-color: #283023 !important;
     color: #e2e5dd !important;
+  }
+
+  .workspace-switch {
+    background: #181d16 !important;
+    border-color: #283023 !important;
+    color: #e2e5dd !important;
+  }
+
+  .workspace-switch small {
+    color: #8c9883 !important;
+  }
+
+  .workspace-switch > svg {
+    color: #8c9883 !important;
+  }
+
+  .workspace-avatar {
+    background: #252e20 !important;
+    border-color: #35422e !important;
+    color: #cad5be !important;
+  }
+
+  .workspace-avatar span {
+    border-color: #181d16 !important;
+  }
+
+  .small-momentum {
+    background: linear-gradient(130deg, #1b2218, #151a13) !important;
+    border-color: #283023 !important;
+  }
+
+  .momentum-icon {
+    color: #7d9c65 !important;
+  }
+
+  .small-momentum h3 {
+    color: #dbe2d5 !important;
+  }
+
+  .small-momentum p {
+    color: #8c9883 !important;
+  }
+
+  .momentum-line span {
+    background: #273121 !important;
+  }
+
+  .momentum-line span:nth-child(-n + 4) {
+    background: #5b7c43 !important;
+  }
+
+  .momentum-line span:nth-child(4) {
+    background: #759858 !important;
+  }
+
+  .applications-panel {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .panel-title-row h2 {
+    color: #f1f3ee !important;
+  }
+
+  .panel-title-row p {
+    color: #8c9883 !important;
+  }
+
+  .small-count {
+    background: #232c1e !important;
+    color: #a4b29c !important;
+  }
+
+  .table-tabs {
+    border-color: #283023 !important;
+  }
+
+  .table-tabs > button {
+    color: #8c9883 !important;
+  }
+
+  .table-tabs > button:hover {
+    color: #dbe2d6 !important;
+  }
+
+  .table-tabs > button.selected {
+    color: #e5885e !important;
+    border-bottom-color: #e5885e !important;
+  }
+
+  .table-tabs > button span {
+    background: #232c1e !important;
+    color: #8c9883 !important;
+  }
+
+  .table-tabs > button.selected span {
+    background: #38281d !important;
+    color: #e5885e !important;
+  }
+
+  .table-view-label {
+    color: #8c9883 !important;
+  }
+
+  .view-table-icon i {
+    border-color: #4b5843 !important;
+  }
+
+  .table-toolbar {
+    background: transparent !important;
+  }
+
+  .search-field {
+    background: #1c211a !important;
+    border-color: #2e3727 !important;
+    color: #e2e5dd !important;
+  }
+
+  .search-field input::placeholder {
+    color: #6d7863 !important;
+  }
+
+  .search-field:focus-within {
+    border-color: #557241 !important;
+  }
+
+  kbd {
+    background: #232c1f !important;
+    border-color: #33402c !important;
+    color: #8c9883 !important;
+    box-shadow: none !important;
+  }
+
+  .filter-select {
+    background: #1c211a !important;
+    border-color: #2e3727 !important;
+    color: #a4b29c !important;
+  }
+
+  .filter-selected {
+    background: #33261a !important;
+    border-color: #59402a !important;
+    color: #e5885e !important;
+  }
+
+  .sort-button {
+    background: #1c211a !important;
+    border-color: #2e3727 !important;
+    color: #a4b29c !important;
+  }
+
+  .sort-button:hover,
+  .sort-active {
+    background: #252d20 !important;
+    color: #eceee8 !important;
+  }
+
+  .table-options {
+    background: #161a14 !important;
+    color: #8c9883 !important;
+  }
+
+  .table-options button {
+    background: #1f271c !important;
+    border-color: #2e3a27 !important;
+    color: #dbe2d6 !important;
+  }
+
+  .applications-table thead {
+    background: #151a13 !important;
+  }
+
+  .applications-table th {
+    background: #151a13 !important;
+    border-color: #283023 !important;
+    color: #8c9883 !important;
+  }
+
+  .applications-table td {
+    background: transparent !important;
+    border-color: #232a1e !important;
+    color: #c8d1c2 !important;
+  }
+
+  .applications-table tbody tr:hover {
+    background: #1c2319 !important;
+  }
+
+  .company-cell strong {
+    color: #f1f3ee !important;
+  }
+
+  .role-cell {
+    color: #c8d1c2 !important;
+  }
+
+  .role-cell > span {
+    color: #7b8871 !important;
+  }
+
+  .next-action {
+    color: #9ba791 !important;
+  }
+
+  .action-icon {
+    color: #7b8871 !important;
+  }
+
+  .tiny-dot {
+    background: #506145 !important;
+  }
+
+  .row-arrow {
+    color: #55664b !important;
+  }
+
+  .table-footer {
+    border-color: #283023 !important;
+    color: #8c9883 !important;
+  }
+
+  .table-footer strong {
+    color: #dbe2d6 !important;
+  }
+
+  .pagination button {
+    color: #8c9883 !important;
+  }
+
+  .pagination button.current {
+    background: #252e20 !important;
+    color: #e2e5dd !important;
+    border-color: #35422e !important;
+  }
+
+  .pagination button:not(:disabled):hover {
+    background: #1f271b !important;
+    color: #f1f3ee !important;
+  }
+
+  .encouragement {
+    color: #8c9883 !important;
+  }
+
+  .encouragement-icon {
+    background: #1d2419 !important;
+    color: #7f9d68 !important;
+  }
+
+  .encouragement > span:last-child {
+    color: #7f9d68 !important;
+  }
+
+  .upcoming-card {
+    border-color: #242c1e !important;
+  }
+
+  .upcoming-card:hover {
+    background: #1d2319 !important;
+  }
+
+  .upcoming-first {
+    background: #252016 !important;
+    border-color: #4a3a22 !important;
+  }
+
+  .upcoming-first:hover {
+    background: #2e261a !important;
+  }
+
+  .upcoming-first .upcoming-date {
+    color: #e5b072 !important;
+  }
+
+  .upcoming-first .prep-link {
+    color: #e5b072 !important;
+  }
+
+  .upcoming-first .upcoming-company strong {
+    color: #f6eedb !important;
+  }
+
+  .upcoming-first .upcoming-company > div > span {
+    color: #c4b9a3 !important;
+  }
+
+  .upcoming-company strong {
+    color: #e2e5dd !important;
+  }
+
+  .upcoming-company > div > span {
+    color: #8c9883 !important;
+  }
+
+  .prep-link {
+    color: #9aa88c !important;
+  }
+
+  .side-panel-footer {
+    border-color: #283023 !important;
+    color: #8c9883 !important;
+  }
+
+  .side-panel-footer:hover {
+    background: #1f271c !important;
+    color: #eceee8 !important;
+  }
+
+  .board-widget-row {
+    border-color: #283023 !important;
+  }
+
+  .mini-board-logo {
+    background: #232b1f !important;
+    border: 1px solid #333f2c !important;
+    color: #cad5be !important;
+  }
+
+  .mini-board-logo.linkedin {
+    background: #182838 !important;
+    border-color: #243c54 !important;
+    color: #72aed4 !important;
+  }
+
+  .mini-board-logo.wellfound {
+    background: #242820 !important;
+    border-color: #363d30 !important;
+    color: #b4bda8 !important;
+  }
+
+  .mini-board-logo.yc {
+    background: #362618 !important;
+    border-color: #543b24 !important;
+    color: #e59a58 !important;
+  }
+
+  .board-widget-name strong {
+    color: #e2e5dd !important;
+  }
+
+  .board-widget-name small {
+    color: #8c9883 !important;
+  }
+
+  .board-widget-name small.board-due {
+    color: #e5b072 !important;
+  }
+
+  .board-check {
+    background: #1c2219 !important;
+    border-color: #333f2c !important;
+    color: #8c9883 !important;
+  }
+
+  .board-check:hover {
+    background: #263221 !important;
+    border-color: #4a5c3a !important;
+    color: #a6c498 !important;
+  }
+
+  .board-check.checked {
+    background: #22321c !important;
+    border-color: #3f5531 !important;
+    color: #88be6c !important;
+  }
+
+  .board-widget-tip {
+    background: #151a13 !important;
+    border-color: #283023 !important;
+    color: #8c9883 !important;
+  }
+
+  .privacy-note {
+    color: #76836c !important;
+  }
+
+  .privacy-note p {
+    color: #76836c !important;
+  }
+
+  .privacy-note p span {
+    color: #8c9883 !important;
+  }
+
+  .company-logo.logo-notion {
+    background: #222720 !important;
+    border-color: #364130 !important;
+    color: #f1f3ee !important;
+  }
+
+  .company-logo.logo-stripe {
+    background: #262138 !important;
+    border-color: #3d345c !important;
+    color: #a698e8 !important;
+  }
+
+  .company-card-footer {
+    border-color: #283023 !important;
+  }
+
+  .company-card-footer > span:first-child {
+    color: #8c9883 !important;
+  }
+
+  .company-domain {
+    color: #8c9883 !important;
+  }
+
+  .company-card > p {
+    color: #9aa791 !important;
+  }
+
+  .timeline-round-item.round-overdue {
+    border-color: #8c4233 !important;
+    background: #2a1b18 !important;
+  }
+
+  .round-overdue-badge {
+    background: #3e1e19 !important;
+    border-color: #632e25 !important;
+    color: #f28b77 !important;
+  }
+
+  .topic-tag-pill {
+    background: #1e261a !important;
+    border-color: #33422b !important;
+    color: #cad5be !important;
+  }
+
+  .detail-tabs {
+    border-color: #283023 !important;
+  }
+
+  .detail-tabs > button {
+    color: #8c9883 !important;
+  }
+
+  .detail-tabs > button.selected {
+    color: #e5885e !important;
+    border-bottom-color: #e5885e !important;
+  }
+
+  .empty-icon {
+    background: #1c2419 !important;
+    color: #7f9d68 !important;
+  }
+
+  .popover-footer {
+    background: #151a13 !important;
+    border-color: #283023 !important;
+    color: #8c9883 !important;
+  }
+
+  .calendar-block {
+    border-color: #283023 !important;
+  }
+
+  .calendar-block > span {
+    background: #242c1f !important;
+    color: #e5b072 !important;
+  }
+
+  .calendar-block strong {
+    color: #e2e5dd !important;
+  }
+
+  .reminder-round-row {
+    border-color: #283023 !important;
+  }
+
+  .followup-row {
+    border-color: #283023 !important;
+  }
+
+  .settings-row {
+    border-color: #283023 !important;
+  }
+
+  .help-note {
+    background: #192116 !important;
+    border: 1px solid #283023 !important;
+  }
+
+  .toast {
+    background: #1c221a !important;
+    border-color: #2e3a27 !important;
+    color: #dbe2d6 !important;
+  }
+
+  .toast.error {
+    background: #2a1816 !important;
+    border-color: #4f2520 !important;
+    color: #e5885e !important;
+  }
+
+  .markdown-toolbar {
+    background: #171b14 !important;
+    border-color: #283023 !important;
+  }
+
+  .markdown-editor {
+    border-color: #283023 !important;
+  }
+
+  .timeline-marker {
+    background: #1c2419 !important;
+    border-color: #283023 !important;
+    color: #8cb875 !important;
+  }
+
+  .timeline-item.upcoming .timeline-marker {
+    background: #2b2216 !important;
+    border-color: #4a3821 !important;
+    color: #e5b072 !important;
+  }
+
+  .timeline-item::before {
+    background: #283023 !important;
+  }
+
+  .round-status {
+    background: #20271b !important;
+    color: #a6b794 !important;
+  }
+
+  .round-status.upcoming {
+    background: #2e2417 !important;
+    color: #e5b072 !important;
+  }
+
+  .next-step-card {
+    background: #252016 !important;
+    border-color: #4a3a22 !important;
+  }
+
+  .next-step-card h3 {
+    color: #e5b072 !important;
+  }
+
+  .next-step-card > p {
+    color: #d8c29e !important;
+  }
+
+  .next-step-card > small {
+    color: #9a8c73 !important;
+  }
+
+  .company-application-row {
+    border-color: #283023 !important;
+  }
+
+  .company-application-icon {
+    background: #20271b !important;
+    color: #8cb875 !important;
+  }
+
+  .segmented {
+    background: #151a13 !important;
+    border-color: #283023 !important;
+  }
+
+  .segmented button {
+    color: #8c9883 !important;
+  }
+
+  .segmented button.selected {
+    background: #252d20 !important;
+    color: #f1f3ee !important;
   }
 
   .company-card:hover {
