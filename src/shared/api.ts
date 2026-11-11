@@ -48,6 +48,7 @@ export interface Application {
   updated_at: string;
   next_action?: string;
   company_name?: string;
+  technical_topics?: string;
 }
 
 export interface Round {

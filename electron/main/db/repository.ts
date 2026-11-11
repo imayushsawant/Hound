@@ -86,6 +86,29 @@ export function deriveNextAction(
   return "";
 }
 
+/**
+ * Derives unique technical topics asked across all rounds of an application.
+ */
+export function deriveTechnicalTopics(
+  rounds: { topics_asked?: string | null; topics?: string | null }[] = [],
+): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const r of rounds) {
+    const raw = r.topics_asked || r.topics;
+    if (!raw || typeof raw !== "string") continue;
+    const parts = raw.split(/[\n,;]+/).map((s) => s.trim()).filter(Boolean);
+    for (const item of parts) {
+      const lower = item.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        unique.push(item);
+      }
+    }
+  }
+  return unique;
+}
+
 /** Sole owner of SQLite. Writes broadcast notifications. */
 export class Repository {
   readonly #database: Database.Database;
@@ -264,10 +287,12 @@ export class Repository {
     const rounds = this.listRounds(app.id);
     const company = this.getCompany(app.company_id);
     const nextAction = deriveNextAction(app, rounds);
+    const topics = deriveTechnicalTopics(rounds);
     return {
       ...app,
       company_name: company?.name,
       next_action: nextAction,
+      technical_topics: topics.join(", "),
     };
   }
 
@@ -300,10 +325,14 @@ export class Repository {
       roundsByApp.set(r.application_id, list);
     }
 
-    return rows.map((app) => ({
-      ...app,
-      next_action: deriveNextAction(app, roundsByApp.get(app.id) || []),
-    }));
+    return rows.map((app) => {
+      const appRounds = roundsByApp.get(app.id) || [];
+      return {
+        ...app,
+        next_action: deriveNextAction(app, appRounds),
+        technical_topics: deriveTechnicalTopics(appRounds).join(", "),
+      };
+    });
   }
 
   getApplication(id: number): Application | null {
@@ -697,7 +726,7 @@ export class Repository {
           offer: a.offer_package || "",
           joining: a.joining_date || "",
           rejection: a.rejection_reason || "",
-          topics: a.technical_topics || "",
+          topics: deriveTechnicalTopics(appRounds as any).join(", "),
           followUpDone: Boolean(a.follow_up_done),
           rounds: appRounds
             .sort((r1, r2) => (r1.position ?? 0) - (r2.position ?? 0))
@@ -776,8 +805,8 @@ export class Repository {
         offer_package, joining_date, rejection_reason, technical_topics, updated_at, follow_up_done, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       const addRound = this.#database.prepare(`INSERT INTO rounds
-        (external_key, application_id, position, type, scheduled_date, status, next_action, resume_used, prep_notes_md, interview_notes_md)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        (external_key, application_id, position, type, scheduled_date, status, next_action, resume_used, prep_notes_md, interview_notes_md, topics_asked)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
       for (const a of data.applications.slice().reverse()) {
         const result = addApplication.run(
           a.id,
@@ -790,11 +819,11 @@ export class Repository {
           a.url,
           a.applied,
           a.resume,
-          a.nextAction,
+          a.nextActionOverride && a.nextActionOverride.trim().length > 0 ? a.nextActionOverride.trim() : null,
           a.offer,
           a.joining,
           a.rejection,
-          a.topics,
+          null,
           a.updated,
           a.followUpDone ? 1 : 0,
           a.applied || new Date().toISOString(),
@@ -811,6 +840,7 @@ export class Repository {
             r.resume,
             r.prep,
             r.notes,
+            r.topics || null,
           ),
         );
       }

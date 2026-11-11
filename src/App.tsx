@@ -2531,10 +2531,6 @@ function ApplicationDetail({
         list.push(...parts);
       }
     }
-    if (a.topics && typeof a.topics === "string") {
-      const parts = a.topics.split(/[\n,;]+/).map((s: string) => s.trim()).filter(Boolean);
-      list.push(...parts);
-    }
     const seen = new Set<string>();
     const unique: string[] = [];
     for (const t of list) {
@@ -2545,7 +2541,7 @@ function ApplicationDetail({
       }
     }
     return unique;
-  }, [a.rounds, a.topics]);
+  }, [a.rounds]);
 
   const sortedRounds = useMemo(() => {
     return [...(a.rounds || [])].sort((x, y) => (x.position ?? 0) - (y.position ?? 0));
