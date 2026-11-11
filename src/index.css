@@ -3517,6 +3517,58 @@ kbd {
   color: var(--muted);
 }
 
+.round-add-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 16px;
+  background: #fbfcf9;
+  border: 1px solid #e3e8da;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.rounds-empty-box {
+  padding: 24px;
+  text-align: center;
+  background: #fbfcf9;
+  border-radius: 8px;
+  border: 1px dashed #dbe4d1;
+}
+
+.offer-info-banner {
+  padding: 12px 16px;
+  background: #f8faf5;
+  border-radius: 6px;
+  border: 1px solid #e7ede0;
+  margin-bottom: 16px;
+}
+
+.quick-add-window {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #fafbf9;
+  color: #28341e;
+  font-family: 'DM Sans', sans-serif;
+  box-sizing: border-box;
+  padding: 16px;
+  user-select: none;
+  border: 1px solid #d5dfc9;
+}
+
+.quick-add-input,
+.quick-add-select {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccd6c0;
+  font-size: 13px;
+  background: #ffffff;
+  color: #1f2915;
+  outline: none;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --accent: #e5885e;
@@ -3574,10 +3626,55 @@ kbd {
   .board-card,
   .empty-state,
   .info-banner,
-  .loading-card {
+  .loading-card,
+  .stat-card,
+  .company-card,
+  .notification-popover {
     background: #181d16 !important;
     border-color: #283023 !important;
     color: #e2e5dd !important;
+  }
+
+  .company-card:hover {
+    background: #1f261c !important;
+    border-color: #35422e !important;
+  }
+
+  .notification-row {
+    border-color: #283023 !important;
+    color: #e2e5dd !important;
+  }
+
+  .notification-row:hover {
+    background: #1f261c !important;
+  }
+
+  .round-add-bar,
+  .rounds-empty-box,
+  .offer-info-banner {
+    background: #141812 !important;
+    border-color: #272f22 !important;
+    color: #e2e5dd !important;
+  }
+
+  .search-field,
+  .table-options button {
+    background: #1c211a !important;
+    border-color: #2e3727 !important;
+    color: #e2e5dd !important;
+  }
+
+  .quick-add-window {
+    background: #151a13 !important;
+    color: #e2e5dd !important;
+    border-color: #272d22 !important;
+  }
+
+  .quick-add-input,
+  .quick-add-select {
+    background: #1e241c !important;
+    border-color: #323c2b !important;
+    color: #eceee8 !important;
   }
 
   .board-card-name h3,

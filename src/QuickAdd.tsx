@@ -46,20 +46,7 @@ export function QuickAdd() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        background: "#fafbf9",
-        color: "#28341e",
-        fontFamily: "'DM Sans', sans-serif",
-        boxSizing: "border-box",
-        padding: "16px",
-        userSelect: "none",
-        border: "1px solid #d5dfc9",
-      }}
-    >
+    <div className="quick-add-window">
       <div
         style={
           {
@@ -68,14 +55,14 @@ export function QuickAdd() {
             justifyContent: "space-between",
             marginBottom: "12px",
             paddingBottom: "8px",
-            borderBottom: "1px solid #e7ede0",
+            borderBottom: "1px solid var(--border)",
             WebkitAppRegion: "drag",
           } as any
         }
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <HoundMark size={20} />
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#3e4c30" }}>
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>
             Quick Add Application
           </span>
         </div>
@@ -124,15 +111,7 @@ export function QuickAdd() {
             value={company}
             onChange={(e) => setCompany(e.target.value)}
             placeholder="e.g. Linear"
-            style={{
-              padding: "7px 10px",
-              borderRadius: "6px",
-              border: "1px solid #ccd6c0",
-              fontSize: "13px",
-              background: "#ffffff",
-              color: "#1f2915",
-              outline: "none",
-            }}
+            className="quick-add-input"
           />
           <datalist id="quick-add-company-list">
             {companies.map((c) => (
@@ -154,15 +133,7 @@ export function QuickAdd() {
             value={role}
             onChange={(e) => setRole(e.target.value)}
             placeholder="e.g. Senior Frontend Engineer"
-            style={{
-              padding: "7px 10px",
-              borderRadius: "6px",
-              border: "1px solid #ccd6c0",
-              fontSize: "13px",
-              background: "#ffffff",
-              color: "#1f2915",
-              outline: "none",
-            }}
+            className="quick-add-input"
           />
         </div>
 
@@ -177,15 +148,7 @@ export function QuickAdd() {
             id="quick-status"
             value={status}
             onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: "6px",
-              border: "1px solid #ccd6c0",
-              fontSize: "13px",
-              background: "#ffffff",
-              color: "#1f2915",
-              outline: "none",
-            }}
+            className="quick-add-select"
           >
             {ApplicationStatuses.map((st) => (
               <option key={st} value={st}>

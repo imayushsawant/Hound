@@ -2848,25 +2848,13 @@ function ApplicationDetail({
           </div>
 
           {/* Quick Add Round Bar */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "10px",
-              alignItems: "flex-end",
-              padding: "16px",
-              background: "#fbfcf9",
-              border: "1px solid #e3e8da",
-              borderRadius: "8px",
-              marginBottom: "16px",
-            }}
-          >
+          <div className="round-add-bar">
             <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55" }}>
               Round type
               <select
                 value={newRoundType}
                 onChange={(e) => setNewRoundType(e.target.value)}
-                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
+                style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px" }}
               >
                 {roundTypes.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -2879,7 +2867,7 @@ function ApplicationDetail({
                 type="datetime-local"
                 value={newRoundDate}
                 onChange={(e) => setNewRoundDate(e.target.value)}
-                style={{ padding: "5px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
+                style={{ padding: "5px 10px", borderRadius: "6px", fontSize: "12px" }}
               />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55", flex: "1 1 200px" }}>
@@ -2888,7 +2876,7 @@ function ApplicationDetail({
                 value={newRoundAction}
                 onChange={(e) => setNewRoundAction(e.target.value)}
                 placeholder="e.g. Review system design patterns"
-                style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid #ccd6c0", background: "white", fontSize: "12px" }}
+                style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px" }}
               />
             </label>
             <button
@@ -3072,7 +3060,7 @@ function ApplicationDetail({
               })}
             </div>
           ) : (
-            <div style={{ padding: "24px", textAlign: "center", background: "#fbfcf9", borderRadius: "8px", border: "1px dashed #dbe4d1" }}>
+            <div className="rounds-empty-box">
               <p className="muted small" style={{ margin: 0 }}>
                 No rounds added yet. Select a round type above and click <strong>Add round</strong> to start your timeline.
               </p>
@@ -3141,15 +3129,7 @@ function ApplicationDetail({
           )}
 
           {stage !== "Offer" && stage !== "Rejected" && (
-            <div
-              style={{
-                padding: "12px 16px",
-                background: "#f8faf5",
-                borderRadius: "6px",
-                border: "1px solid #e7ede0",
-                marginBottom: "16px",
-              }}
-            >
+            <div className="offer-info-banner">
               <p className="muted small" style={{ margin: 0 }}>
                 Offer fields appear when status is <strong>Offer</strong>, and rejection reason appears when status is <strong>Rejected</strong>.
               </p>
@@ -3157,7 +3137,7 @@ function ApplicationDetail({
           )}
 
           {/* Technical topics asked (aggregated read-only from all rounds) */}
-          <div style={{ marginTop: "16px", borderTop: "1px solid #edf1e7", paddingTop: "16px" }}>
+          <div style={{ marginTop: "16px", borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
               <h3 style={{ fontSize: "12px", fontWeight: 600, color: "#687b55", margin: 0 }}>
                 Technical topics asked
@@ -3167,18 +3147,7 @@ function ApplicationDetail({
             {aggregatedTopics.length > 0 ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
                 {aggregatedTopics.map((topic, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      padding: "4px 9px",
-                      background: "#f0f4ea",
-                      border: "1px solid #dbe4d1",
-                      borderRadius: "5px",
-                      fontSize: "11px",
-                      color: "#4e603e",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <span key={i} className="topic-tag">
                     {topic}
                   </span>
                 ))}
@@ -3794,9 +3763,8 @@ function Settings({
               style={{
                 padding: "6px 12px",
                 borderRadius: "6px",
-                border: "1px solid #ccd6c0",
-                background: "white",
                 fontSize: "12px",
+                width: "auto",
               }}
             >
               {[3, 5, 7, 10, 14, 21].map((n) => (
