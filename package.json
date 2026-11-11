@@ -13,6 +13,7 @@
     "build:web": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
+    "seed": "node --experimental-strip-types scripts/seed.ts",
     "postinstall": "electron-builder install-app-deps",
     "dist:win": "npm run build && electron-builder --win",
     "preview": "vite preview",
