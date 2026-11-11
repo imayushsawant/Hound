@@ -72,10 +72,45 @@ import {
   type Stage,
   type Store,
 } from "./data";
+import { NoteEditor } from "./NoteEditor";
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
 type Toast = { message: string; error?: boolean };
+type NoteRoute = {
+  applicationId: string;
+  roundId: string;
+  type: "prep" | "interview";
+} | null;
+
+function parseHashRoute(): {
+  page?: Page;
+  appId?: string;
+  companyId?: string;
+  noteRoute?: NoteRoute;
+} {
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  const noteMatch = hash.match(/^applications\/([^/]+)\/rounds\/([^/]+)\/(prep|interview)$/i);
+  if (noteMatch) {
+    return {
+      noteRoute: {
+        applicationId: noteMatch[1],
+        roundId: noteMatch[2],
+        type: noteMatch[3].toLowerCase() as "prep" | "interview",
+      },
+    };
+  }
+  const appMatch = hash.match(/^applications\/([^/]+)$/i);
+  if (appMatch) {
+    return { appId: appMatch[1] };
+  }
+  const compMatch = hash.match(/^companies\/([^/]+)$/i);
+  if (compMatch) {
+    return { companyId: compMatch[1] };
+  }
+  return {};
+}
+
 const activeCount = (s: Store) => s.applications.filter(isActive).length;
 const dueApplications = (s: Store) =>
   s.applications.filter(
@@ -88,6 +123,7 @@ function App() {
   const [page, setPage] = useState<Page>("Overview");
   const [selectedApp, setSelectedApp] = useState<string | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
+  const [activeNoteRoute, setActiveNoteRoute] = useState<NoteRoute>(null);
   const [modal, setModal] = useState<Modal>(null);
   const [newCompany, setNewCompany] = useState("");
   const [query, setQuery] = useState("");
@@ -217,21 +253,74 @@ function App() {
     const timer = setInterval(check, 60000);
     return () => clearInterval(timer);
   }, [store, ready]);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const parsed = parseHashRoute();
+      if (parsed.noteRoute) {
+        setActiveNoteRoute(parsed.noteRoute);
+        setSelectedApp(parsed.noteRoute.applicationId);
+      } else if (parsed.appId) {
+        setSelectedApp(parsed.appId);
+        setActiveNoteRoute(null);
+      } else if (parsed.companyId) {
+        setSelectedCompany(parsed.companyId);
+        setActiveNoteRoute(null);
+      }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   const navigate = (next: Page) => {
     setPage(next);
     setSelectedApp(null);
     setSelectedCompany(null);
+    setActiveNoteRoute(null);
     setQuery("");
     setMobileNav(false);
     setNotificationsOpen(false);
+    window.location.hash = "";
   };
   const updateApplication = (id: string, patch: Partial<Application>) =>
     setStore((s) => ({
       ...s,
       applications: s.applications.map((a) =>
-        a.id === id ? { ...a, ...patch, updated: isoDate() } : a,
+        a.id === id ? { ...a, ...patch, updated: new Date().toISOString() } : a,
       ),
     }));
+  const updateApplicationRoundNotes = (
+    applicationId: string,
+    roundId: string,
+    type: "prep" | "interview",
+    markdown: string,
+  ) => {
+    setStore((s) => ({
+      ...s,
+      applications: s.applications.map((a) => {
+        if (a.id !== applicationId) return a;
+        return {
+          ...a,
+          updated: new Date().toISOString(),
+          rounds: (a.rounds || []).map((r) => {
+            if (r.id !== roundId) return r;
+            return {
+              ...r,
+              [type === "prep" ? "prep" : "notes"]: markdown,
+            };
+          }),
+        };
+      }),
+    }));
+
+    const numericRoundId = Number(roundId);
+    if (!isNaN(numericRoundId) && window.nudge?.updateRound) {
+      void window.nudge.updateRound(numericRoundId, {
+        [type === "prep" ? "prep_notes_md" : "interview_notes_md"]: markdown,
+      });
+    }
+  };
   const addApplication = (application: Application, company?: Company) => {
     setStore((s) => ({
       ...s,
@@ -244,13 +333,21 @@ function App() {
   };
   const openApp = (id: string) => {
     setSelectedApp(id);
+    setActiveNoteRoute(null);
     setNotificationsOpen(false);
     setQuery("");
+    window.location.hash = `/applications/${id}`;
   };
   const openCompany = (id: string) => {
     setPage("Companies");
     setSelectedCompany(id);
     setSelectedApp(null);
+    setActiveNoteRoute(null);
+    window.location.hash = `/companies/${id}`;
+  };
+  const openNotes = (applicationId: string, roundId: string, type: "prep" | "interview") => {
+    setActiveNoteRoute({ applicationId, roundId, type });
+    window.location.hash = `/applications/${applicationId}/rounds/${roundId}/${type}`;
   };
   const checkBoard = (id: string) => {
     setStore((s) => ({
@@ -262,6 +359,26 @@ function App() {
   const reminderCount = dueApplications(store).length + store.boards.filter(boardDue).length;
   const app = store.applications.find((a) => a.id === selectedApp);
   const company = store.companies.find((c) => c.id === selectedCompany);
+
+  const activeNoteApp = activeNoteRoute
+    ? store.applications.find((a) => a.id === activeNoteRoute.applicationId)
+    : null;
+  const activeNoteRound =
+    activeNoteApp && activeNoteRoute
+      ? (activeNoteApp.rounds || []).find((r) => r.id === activeNoteRoute.roundId)
+      : null;
+  const activeNoteCompany =
+    activeNoteApp
+      ? store.companies.find((c) => c.id === activeNoteApp.companyId) || {
+          id: activeNoteApp.companyId,
+          name: "Company",
+          domain: "",
+          color: "#6c8452",
+          description: "",
+          notes: "",
+        }
+      : null;
+
   const addButton = (
     <button
       className="button primary"
@@ -456,7 +573,27 @@ function App() {
           </div>
         </header>
         <main className="main-content">
-          {app ? (
+          {activeNoteApp && activeNoteRound && activeNoteCompany && activeNoteRoute ? (
+            <NoteEditor
+              application={activeNoteApp}
+              company={activeNoteCompany}
+              round={activeNoteRound}
+              type={activeNoteRoute.type}
+              onBack={() => {
+                setSelectedApp(activeNoteRoute.applicationId);
+                setActiveNoteRoute(null);
+                window.location.hash = `/applications/${activeNoteRoute.applicationId}`;
+              }}
+              onSave={(markdown) => {
+                updateApplicationRoundNotes(
+                  activeNoteRoute.applicationId,
+                  activeNoteRoute.roundId,
+                  activeNoteRoute.type,
+                  markdown,
+                );
+              }}
+            />
+          ) : app ? (
             <ApplicationDetail
               application={app}
               company={
@@ -469,7 +606,11 @@ function App() {
                   notes: "",
                 }
               }
-              onBack={() => setSelectedApp(null)}
+              onBack={() => {
+                setSelectedApp(null);
+                setActiveNoteRoute(null);
+                window.location.hash = "";
+              }}
               onUpdate={(patch) => updateApplication(app.id, patch)}
               onUpdateCompany={(patch) => {
                 setStore((s) => ({
@@ -478,12 +619,15 @@ function App() {
                 }));
               }}
               onCompany={() => openCompany(app.companyId)}
+              onOpenNotes={(roundId, type) => openNotes(app.id, roundId, type)}
               onDelete={() => {
                 setStore((s) => ({
                   ...s,
                   applications: s.applications.filter((a) => a.id !== app.id),
                 }));
                 setSelectedApp(null);
+                setActiveNoteRoute(null);
+                window.location.hash = "";
                 notify("Application deleted.");
               }}
             />
@@ -2009,6 +2153,7 @@ function ApplicationDetail({
   onUpdateCompany,
   onCompany,
   onDelete,
+  onOpenNotes,
 }: {
   application: Application;
   company: Company;
@@ -2017,6 +2162,7 @@ function ApplicationDetail({
   onUpdateCompany: (patch: Partial<Company>) => void;
   onCompany: () => void;
   onDelete: () => void;
+  onOpenNotes: (roundId: string, type: "prep" | "interview") => void;
 }) {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
@@ -2039,9 +2185,6 @@ function ApplicationDetail({
 
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-
-  // Notes placeholder modal state
-  const [activeNoteModal, setActiveNoteModal] = useState<{ round: Round; type: "prep" | "interview" } | null>(null);
 
   // Outcome fields
   const [offer, setOffer] = useState(a.offer || "");
@@ -2703,7 +2846,7 @@ function ApplicationDetail({
                           <button
                             type="button"
                             className="button secondary small-button"
-                            onClick={() => setActiveNoteModal({ round: r, type: "prep" })}
+                            onClick={() => onOpenNotes(r.id, "prep")}
                             style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
                           >
                             <FileText size={12} /> Prep notes
@@ -2711,7 +2854,7 @@ function ApplicationDetail({
                           <button
                             type="button"
                             className="button secondary small-button"
-                            onClick={() => setActiveNoteModal({ round: r, type: "interview" })}
+                            onClick={() => onOpenNotes(r.id, "interview")}
                             style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
                           >
                             <FileText size={12} /> Interview notes
@@ -2853,42 +2996,7 @@ function ApplicationDetail({
         </section>
       </div>
 
-      {/* Notes Placeholder Modal */}
-      {activeNoteModal && (
-        <ModalFrame
-          title={`${activeNoteModal.type === "prep" ? "Prep notes" : "Interview notes"} · ${activeNoteModal.round.type}`}
-          subtitle="Interactive Markdown editor routes are coming soon. Full note editing will be integrated here."
-          onClose={() => setActiveNoteModal(null)}
-        >
-          <div style={{ padding: "16px 0" }}>
-            <div style={{ padding: "16px", background: "#f8faf5", borderRadius: "8px", border: "1px solid #e1e7d7" }}>
-              <p className="muted small" style={{ margin: "0 0 10px 0" }}>
-                Notes for Round {((activeNoteModal.round.position ?? 0) + 1)} ({activeNoteModal.round.title || activeNoteModal.round.type}):
-              </p>
-              <textarea
-                rows={6}
-                value={activeNoteModal.type === "prep" ? (activeNoteModal.round.prep || "") : (activeNoteModal.round.notes || "")}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleUpdateRound(activeNoteModal.round.id, {
-                    [activeNoteModal.type === "prep" ? "prep" : "notes"]: val,
-                  });
-                  setActiveNoteModal((prev) =>
-                    prev ? { ...prev, round: { ...prev.round, [prev.type === "prep" ? "prep" : "notes"]: val } } : null,
-                  );
-                }}
-                placeholder={`Type ${activeNoteModal.type} notes here...`}
-                style={{ width: "100%", resize: "vertical" }}
-              />
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
-              <button type="button" className="button primary" onClick={() => setActiveNoteModal(null)}>
-                <Check size={14} /> Close
-              </button>
-            </div>
-          </div>
-        </ModalFrame>
-      )}
+
 
       {deleteConfirm && (
         <ModalFrame

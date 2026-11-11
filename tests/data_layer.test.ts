@@ -134,9 +134,14 @@ test("applications.updated_at updates whenever the application or any of its rou
     // 3. Round update updates parent application's updated_at
     repo.updateRound(round.id, {
       status: "done",
+      prep_notes_md: "## Topics to revise\n- System Design",
+      interview_notes_md: "## Questions asked\n- Rate limiter",
     });
     const appAfterRoundUpdate = repo.getApplication(app.id)!;
     assert.notEqual(appAfterRoundUpdate.updated_at, appAfterRoundInsert.updated_at);
+    const updatedRound = repo.getRound(round.id)!;
+    assert.equal(updatedRound.prep_notes_md, "## Topics to revise\n- System Design");
+    assert.equal(updatedRound.interview_notes_md, "## Questions asked\n- Rate limiter");
 
     await new Promise((r) => setTimeout(r, 20));
 
