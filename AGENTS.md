@@ -1,0 +1,7 @@
+- GIT: Commit after every prompt AND after every intermediate step (scaffold, schema, each feature, each fix). Small commits, conventional messages (feat:, fix:, chore:, refactor:, test:, docs:). Never push. Never leave work uncommitted at the end of a task.
+- SINGLE ENTRY: one user action must never require edits in more than one place. Companies auto-create when an application is added.
+- SINGLE SOURCE OF TRUTH: every fact is stored exactly once. Dashboard rows, company pages, application counts, last-updated, next action and aggregated technical topics are DERIVED by queries, never stored copies.
+- ONE WRITE PATH: all writes go through the repository layer in the main process. After every successful write, main broadcasts a `data:changed` event to all windows and every page refetches on it. No page may hold its own stale copy.
+- REQUIRED FIELDS to add an application: company, role, status. Everything else optional.
+- KEEP SIMPLE: no cloud, no auth, no scraping, no analytics.
+- Ask before adding any dependency beyond the stack above.

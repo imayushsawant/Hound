@@ -1,0 +1,10 @@
+{
+  "description": "Track job applications, interview rounds, notes, and follow-ups in one organized dashboard, helping job seekers manage their search and stay on top of next steps.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
