@@ -5,6 +5,33 @@
 
 ---
 
+## ⬇️ Download Hound for Windows
+
+Get the latest official release for Windows (x64):
+
+| Package | Download Link | Type |
+| :--- | :--- | :--- |
+| **Windows Installer** *(Recommended)* | [**Download Hound-Setup-1.0.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-Setup-1.0.0.exe) | Standard `.exe` setup wizard with Desktop & Start Menu shortcuts |
+| **Portable Version** | [**Download Hound-1.0.0-win.zip**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-1.0.0-win.zip) | Standalone portable archive — extract and run without installing |
+
+👉 **[View all releases & changelogs on GitHub](https://github.com/imayushsawant/Hound/releases/latest)**
+
+### Installation Guide
+
+1. **Download the installer**: Click [**Hound-Setup-1.0.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-Setup-1.0.0.exe).
+2. **Run Setup**:
+   - Double-click `Hound-Setup-1.0.0.exe`.
+   - **Windows SmartScreen Prompt**: Since Hound is a free and open-source project without a paid commercial enterprise certificate, Windows Defender SmartScreen may display a *"Windows protected your PC"* window.
+   - Click **More info** → **Run anyway** to launch the installer.
+3. **Follow the Wizard**:
+   - Choose your preferred installation directory (defaults to your local programs folder).
+   - Let the installer automatically create Desktop and Start Menu shortcuts.
+4. **Launch Hound**:
+   - Open Hound from your Desktop or Start Menu.
+   - Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> anytime to open the global quick-add window from anywhere on your PC!
+
+---
+
 ## Overview
 
 Hound helps you stay organized and keep your momentum during the job search without surrendering your private career data to third-party services.
@@ -70,19 +97,6 @@ npm run typecheck
 # Build the desktop bundles
 npm run build
 ```
-
----
-
-## Installing Hound
-
-### From GitHub Releases (Recommended for Users)
-
-1. Go to the [Releases](https://github.com/imayushsawant/Hound/releases) page on GitHub.
-2. Download the latest installer: **`Hound-Setup-1.0.0.exe`** (or portable archive **`Hound-1.0.0-win.zip`**).
-3. Run the installer and follow the setup wizard:
-   - Installs Hound into your local apps directory.
-   - Automatically creates Desktop and Start Menu shortcuts.
-4. *Note on Windows SmartScreen*: Since Hound is an independent open-source project without an enterprise digital signing certificate, Windows Defender SmartScreen may display *"Windows protected your PC"*. Click **More info** → **Run anyway** to proceed with installation.
 
 ---
 
