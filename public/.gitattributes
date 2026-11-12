@@ -1,2 +1,3 @@
-# AgentPlat packages this default favicon directly from source without LFS hydration.
+# Package icons directly from source without LFS hydration for build systems.
 favicon.png -filter -diff -merge -text
+hound.png -filter -diff -merge -text
