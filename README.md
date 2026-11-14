@@ -30,6 +30,19 @@ Get the latest official release for Windows (x64):
    - Open Hound from your Desktop or Start Menu.
    - Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> anytime to open the global quick-add window from anywhere on your PC!
 
+### Updating to a New Version
+
+When a new version of Hound is released on GitHub:
+
+1. **In-App Notification**: Hound checks for updates on startup. If a newer version is available, an update banner appears across the top of the app, and you can also check anytime under **Settings** → **Application Updates**.
+2. **Download the Latest Installer**: Click **Download update** to jump directly to the latest GitHub Release and download `Hound-Setup-X.X.X.exe`.
+3. **Run Setup In-Place**:
+   - Run the new installer without uninstalling or deleting your previous version.
+   - The installer seamlessly updates Hound's program binaries in place.
+4. **Zero Data Loss Guarantee**:
+   - All your applications, companies, notes, and resumes reside safely in your user data directory (`%APPDATA%\Hound`), completely separate from the application executable.
+   - Any database schema migrations run automatically on the first launch of the new version, keeping all your existing records intact.
+
 ---
 
 ## Overview
@@ -48,6 +61,7 @@ Hound helps you stay organized and keep your momentum during the job search with
 - **Dark mode following OS**: Automatic light and dark themes honoring your operating system settings.
 - **Daily SQLite backups**: Automatic daily SQLite snapshots keeping the last 7 backups, plus one-click JSON export and restore.
 - **Single-instance lock**: Prevents multiple processes; launching a second instance immediately focuses your active window.
+- **Update & release notifications**: Checks for new official releases directly on GitHub on startup and in Settings, notifying you with a one-click link to view release notes and download the new installer.
 
 ---
 
