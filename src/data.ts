@@ -408,7 +408,7 @@ export function validStore(data: unknown): data is Store {
   const s = data as Store;
   const text = (v: unknown): v is string => typeof v === "string" && v.length <= 200000;
   const date = (v: unknown) =>
-    text(v) && (v === "" || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))));
+    text(v) && (v === "" || (/^\d{4}-\d{2}-\d{2}(?:T.*)?$/.test(v) && !Number.isNaN(Date.parse(v))));
   const unique = (items: { id: string }[]) => new Set(items.map((x) => x.id)).size === items.length;
   const webURL = (v: unknown) => text(v) && (v === "" || /^https?:\/\/\S+$/i.test(v));
   try {

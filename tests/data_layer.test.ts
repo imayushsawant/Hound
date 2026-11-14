@@ -663,3 +663,38 @@ test("automatic daily SQLite backup creates file and retains maximum 7 backups",
     fixture.close();
   }
 });
+
+test("saveWorkspace succeeds when application updated date is modified (both YYYY-MM-DD and ISO timestamp)", () => {
+  const fixture = createTestRepo();
+  try {
+    const { repo } = fixture;
+    repo.createApplication({ company_name: "Stripe", role: "Frontend Engineer" });
+    const initial = repo.loadWorkspace();
+    assert.ok(initial.applications.length > 0);
+
+    // 1. Update application with isoDate format (YYYY-MM-DD)
+    const modifiedWithIsoDate = {
+      ...initial,
+      applications: initial.applications.map((app, idx) =>
+        idx === 0 ? { ...app, role: "Senior Engineer", updated: "2026-11-14" } : app,
+      ),
+    };
+    repo.saveWorkspace(modifiedWithIsoDate);
+    let reloaded = repo.loadWorkspace();
+    assert.equal(reloaded.applications[0].role, "Senior Engineer");
+    assert.equal(reloaded.applications[0].updated, "2026-11-14");
+
+    // 2. Update application with full ISO timestamp format (e.g. from new Date().toISOString())
+    const modifiedWithFullIso = {
+      ...reloaded,
+      applications: reloaded.applications.map((app, idx) =>
+        idx === 0 ? { ...app, location: "Bengaluru", updated: new Date().toISOString() } : app,
+      ),
+    };
+    repo.saveWorkspace(modifiedWithFullIso);
+    reloaded = repo.loadWorkspace();
+    assert.equal(reloaded.applications[0].location, "Bengaluru");
+  } finally {
+    fixture.close();
+  }
+});
