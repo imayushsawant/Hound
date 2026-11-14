@@ -718,7 +718,7 @@ export class Repository {
           source: a.source || "",
           url: a.posting_url || "",
           applied: a.applied_date || "",
-          updated: (a.updated_at || "").slice(0, 10),
+          updated: a.updated_at || a.created_at || a.applied_date || "",
           stage: a.status as WorkspaceApplication["stage"],
           nextAction: derived,
           nextActionOverride: a.next_action_override || "",

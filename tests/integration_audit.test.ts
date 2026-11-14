@@ -395,7 +395,7 @@ test("integration: quick-add creates application with valid id that resolves in 
     // Load store as the main window would
     const store = repo.loadWorkspace();
     const appInStore = store.applications.find(
-      (a) => a.id === String(created.id) || a.id === created.id,
+      (a) => a.id === String(created.id),
     );
 
     assert.ok(appInStore, "Created application must be found in workspace by created id");

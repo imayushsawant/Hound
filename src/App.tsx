@@ -377,7 +377,7 @@ function App() {
     setStore((s) => ({
       ...s,
       applications: s.applications.map((a) =>
-        a.id === id ? { ...a, ...patch, updated: isoDate() } : a,
+        a.id === id ? { ...a, ...patch, updated: new Date().toISOString() } : a,
       ),
     }));
   const updateApplicationRoundNotes = (
@@ -392,7 +392,7 @@ function App() {
         if (a.id !== applicationId) return a;
         return {
           ...a,
-          updated: isoDate(),
+          updated: new Date().toISOString(),
           rounds: (a.rounds || []).map((r) => {
             if (r.id !== roundId) return r;
             return {
@@ -2123,7 +2123,7 @@ function ApplicationModal({
           source,
           stage,
           applied: applied || isoDate(),
-          updated: isoDate(),
+          updated: new Date().toISOString(),
           url,
           resume: finalResume,
           nextAction: action,

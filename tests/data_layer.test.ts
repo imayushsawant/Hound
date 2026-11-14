@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Repository, deriveNextAction } from "../electron/main/db/repository.ts";
 import { Scheduler } from "../electron/main/scheduler.ts";
-import { deriveClientNextAction, nextAction, boardDue } from "../src/data.ts";
+import { deriveClientNextAction, nextAction, boardDue, relativeLastUpdated, isoDate } from "../src/data.ts";
 import { seed } from "../scripts/seed.ts";
 
 function createTestRepo() {
@@ -697,4 +697,30 @@ test("saveWorkspace succeeds when application updated date is modified (both YYY
   } finally {
     fixture.close();
   }
+});
+
+test("relativeLastUpdated displays accurate relative intervals for recent and legacy timestamps", () => {
+  const now = Date.now();
+
+  // Seconds ago -> "just now"
+  const tenSecondsAgo = new Date(now - 10 * 1000).toISOString();
+  assert.equal(relativeLastUpdated(tenSecondsAgo), "just now");
+
+  // Minutes ago -> "Xm ago"
+  const fiveMinutesAgo = new Date(now - 5 * 60 * 1000).toISOString();
+  assert.equal(relativeLastUpdated(fiveMinutesAgo), "5m ago");
+
+  // Hours ago -> "Xh ago"
+  const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
+  assert.equal(relativeLastUpdated(twoHoursAgo), "2h ago");
+
+  // Date-only format (YYYY-MM-DD)
+  const today = isoDate(0);
+  assert.equal(relativeLastUpdated(today), "Today");
+
+  const yesterday = isoDate(-1);
+  assert.equal(relativeLastUpdated(yesterday), "Yesterday");
+
+  const threeDaysAgo = isoDate(-3);
+  assert.equal(relativeLastUpdated(threeDaysAgo), "3d ago");
 });
