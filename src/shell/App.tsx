@@ -247,17 +247,6 @@ function StatCard({
       </div>
       <div className="nudge-stat-value" aria-label="Not available yet">
         —
-        <span className="stat-graph" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </span>
       </div>
       <div className="nudge-stat-note">
         <span className="stat-note-dot" />

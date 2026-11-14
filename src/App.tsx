@@ -683,11 +683,6 @@ function App() {
             <strong>{app ? "Application details" : company ? company.name : page}</strong>
           </div>
           <div className="topbar-right">
-            <span className="local-pill">
-              <span className="status-dot" />
-              Local workspace
-            </span>
-            <span className="topbar-divider" />
             <div className="notification-wrap">
               <button
                 className={`icon-button notification-button ${notificationsOpen ? "pressed" : ""}`}
@@ -1389,27 +1384,7 @@ function Stat({
         <span>{title}</span>
         <span className={`stat-icon ${color}`}>{icon}</span>
       </div>
-      <div className="stat-number">
-        {String(value).padStart(2, "0")}
-        <span className={`stat-sparkline ${color}`}>
-          <svg viewBox="0 0 80 28">
-            <path
-              d={
-                color === "green"
-                  ? "M2 24H24V18H41V18H57V8H77"
-                  : color === "purple"
-                    ? "M2 24L16 20L28 22L42 12L55 16L68 6L78 4"
-                    : "M2 24L15 24L26 16L38 19L50 10L61 12L78 3"
-              }
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      </div>
+      <div className="stat-number">{String(value).padStart(2, "0")}</div>
       <div className="stat-detail">{detail}</div>
     </div>
   );
