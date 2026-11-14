@@ -3937,7 +3937,7 @@ function Settings({
   const [name, setName] = useState(store.settings.name);
   const [busy, setBusy] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.0.0");
+  const [appVersion, setAppVersion] = useState("1.1.0");
   const [resumesInfo, setResumesInfo] = useState<{
     currentPath: string;
     defaultPath: string;

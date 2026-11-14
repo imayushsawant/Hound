@@ -17,8 +17,8 @@ win:
     - target: zip
       arch: [x64]
   icon: public/hound.png
-  artifactName: "${productName}-Setup-${version}.${ext}"
 nsis:
+  artifactName: "${productName}-Setup-${version}.${ext}"
   oneClick: false
   allowToChangeInstallationDirectory: true
   shortcutName: Hound

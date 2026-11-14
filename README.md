@@ -11,16 +11,16 @@ Get the latest official release for Windows (x64):
 
 | Package | Download Link | Type |
 | :--- | :--- | :--- |
-| **Windows Installer** *(Recommended)* | [**Download Hound-Setup-1.0.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-Setup-1.0.0.exe) | Standard `.exe` setup wizard with Desktop & Start Menu shortcuts |
-| **Portable Version** | [**Download Hound-1.0.0-win.zip**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-1.0.0-win.zip) | Standalone portable archive — extract and run without installing |
+| **Windows Installer** *(Recommended)* | [**Download Hound-Setup-1.1.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.1.0/Hound-Setup-1.1.0.exe) | Standard `.exe` setup wizard with Desktop & Start Menu shortcuts |
+| **Portable Version** | [**Download Hound-1.1.0-win.zip**](https://github.com/imayushsawant/Hound/releases/download/v1.1.0/Hound-1.1.0-win.zip) | Standalone portable archive — extract and run without installing |
 
 👉 **[View all releases & changelogs on GitHub](https://github.com/imayushsawant/Hound/releases/latest)**
 
 ### Installation Guide
 
-1. **Download the installer**: Click [**Hound-Setup-1.0.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.0.0/Hound-Setup-1.0.0.exe).
+1. **Download the installer**: Click [**Hound-Setup-1.1.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.1.0/Hound-Setup-1.1.0.exe).
 2. **Run Setup**:
-   - Double-click `Hound-Setup-1.0.0.exe`.
+   - Double-click `Hound-Setup-1.1.0.exe`.
    - **Windows SmartScreen Prompt**: Since Hound is a free and open-source project without a paid commercial enterprise certificate, Windows Defender SmartScreen may display a *"Windows protected your PC"* window.
    - Click **More info** → **Run anyway** to launch the installer.
 3. **Follow the Wizard**:
@@ -123,12 +123,12 @@ Hound uses `electron-builder` to package standalone desktop installers.
 npm run dist:win
 ```
 
-The resulting installer (`Hound-Setup-1.0.0.exe`) and portable archive (`Hound-1.0.0-win.zip`) will be generated inside the `release/` directory.
+The resulting installer (`Hound-Setup-1.1.0.exe`) and portable archive (`Hound-1.1.0-win.zip`) will be generated inside the `release/` directory.
 
 ### Automated Cloud Releases (GitHub Actions)
 
 This repository includes a ready-to-run GitHub Actions workflow (`.github/workflows/release.yml`):
-- Pushing any version tag (e.g., `git tag v1.0.0 && git push origin v1.0.0`) automatically builds `Hound-Setup-1.0.0.exe` on a clean Windows runner and publishes a new GitHub Release with installer binaries attached.
+- Pushing any version tag (e.g., `git tag v1.1.0 && git push origin v1.1.0`) automatically builds `Hound-Setup-1.1.0.exe` on a clean Windows runner and publishes a new GitHub Release with installer binaries attached.
 - You can also manually trigger a release from the **Actions** tab on GitHub by clicking **Run workflow**.
 
 ---
