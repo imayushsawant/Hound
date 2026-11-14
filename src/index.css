@@ -3893,6 +3893,90 @@ kbd {
   background: rgba(255, 255, 255, 0.28);
 }
 
+.update-top-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  background: #fdf5ef;
+  border-bottom: 1px solid #fae2d3;
+  color: #9c4b22;
+  font-size: 13px;
+  z-index: 40;
+  animation: banner-slide-down 0.2s ease-out;
+}
+
+@keyframes banner-slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.update-top-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.update-top-banner-icon {
+  color: #e5885e;
+  flex-shrink: 0;
+}
+
+.update-top-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 4px 11px;
+  background: #e5885e;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s ease;
+}
+
+.update-top-banner-btn:hover {
+  background: #cc724c;
+}
+
+.update-top-banner-close {
+  background: transparent;
+  border: none;
+  color: #ba6f48;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s;
+}
+
+.update-top-banner-close:hover {
+  opacity: 0.7;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --accent: #e5885e;
@@ -4761,5 +4845,15 @@ kbd {
 
   .breadcrumb-current {
     color: #e2e5dd !important;
+  }
+
+  .update-top-banner {
+    background: #251b14 !important;
+    border-bottom: 1px solid #3d2b20 !important;
+    color: #e8a882 !important;
+  }
+
+  .update-top-banner-close {
+    color: #d18f69 !important;
   }
 }

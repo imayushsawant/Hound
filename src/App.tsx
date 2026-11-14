@@ -169,6 +169,8 @@ function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
       return localStorage.getItem("hound-sidebar-collapsed") === "true";
@@ -189,6 +191,23 @@ function App() {
   }, []);
   const skipDesktopSave = useRef(false);
   const notify = useCallback((message: string, error = false) => setToast({ message, error }), []);
+
+  useEffect(() => {
+    if (!window.houndDesktop) return;
+    const unsub = window.houndDesktop.onUpdateAvailable?.((info) => {
+      if (info?.updateAvailable) {
+        setUpdateInfo(info);
+      }
+    });
+    window.houndDesktop.checkUpdate?.().then((info) => {
+      if (info?.updateAvailable) {
+        setUpdateInfo(info);
+      }
+    }).catch(() => {});
+    return () => {
+      unsub?.();
+    };
+  }, []);
   useEffect(() => {
     if (!window.houndDesktop) return;
     let live = true;
@@ -697,6 +716,9 @@ function App() {
           >
             <Settings2 size={18} />
             <span>Settings</span>
+            {updateInfo?.updateAvailable && (
+              <span className="reminder-dot" title="New version available" style={{ marginLeft: "auto" }} />
+            )}
           </button>
           <button className="nav-item" onClick={() => setModal("help")}>
             <HelpCircle size={18} />
@@ -845,6 +867,37 @@ function App() {
             </button>
           </div>
         </header>
+        {updateInfo?.updateAvailable && !bannerDismissed && (
+          <div className="update-top-banner" role="alert">
+            <div className="update-top-banner-content">
+              <Sparkles size={16} className="update-top-banner-icon" />
+              <span>
+                A new version of Hound is available (<strong>v{updateInfo.latestVersion}</strong>)!
+              </span>
+              <button
+                className="update-top-banner-btn"
+                onClick={() => {
+                  if (window.houndDesktop?.openExternal) {
+                    void window.houndDesktop.openExternal(updateInfo.releaseUrl);
+                  } else {
+                    window.open(updateInfo.releaseUrl, "_blank");
+                  }
+                }}
+              >
+                <Download size={13} />
+                Download update
+              </button>
+            </div>
+            <button
+              className="update-top-banner-close"
+              onClick={() => setBannerDismissed(true)}
+              aria-label="Dismiss update notification"
+              title="Dismiss"
+            >
+              <X size={15} />
+            </button>
+          </div>
+        )}
         <main className="main-content">
           {activeNoteApp && activeNoteRound && activeNoteCompany && activeNoteRoute ? (
             <NoteEditor
@@ -1351,7 +1404,13 @@ function App() {
                 </>
               )}
               {page === "Settings" && (
-                <Settings store={store} setStore={setStore} notify={notify} />
+                <Settings
+                  store={store}
+                  setStore={setStore}
+                  notify={notify}
+                  updateInfo={updateInfo}
+                  setUpdateInfo={setUpdateInfo}
+                />
               )}
             </>
           )}
@@ -3865,14 +3924,49 @@ function Settings({
   store,
   setStore,
   notify,
+  updateInfo,
+  setUpdateInfo,
 }: {
   store: Store;
   setStore: React.Dispatch<React.SetStateAction<Store>>;
   notify: (s: string, error?: boolean) => void;
+  updateInfo: UpdateInfo | null;
+  setUpdateInfo: React.Dispatch<React.SetStateAction<UpdateInfo | null>>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(store.settings.name);
   const [busy, setBusy] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [appVersion, setAppVersion] = useState("1.0.0");
+
+  useEffect(() => {
+    window.hound?.getAppInfo?.().then((info) => {
+      if (info?.version) setAppVersion(info.version);
+    }).catch(() => {});
+  }, []);
+
+  const handleManualCheck = async () => {
+    if (!window.houndDesktop?.checkUpdate) {
+      notify("Update checking is available in the desktop app.");
+      return;
+    }
+    setCheckingUpdate(true);
+    try {
+      const info = await window.houndDesktop.checkUpdate();
+      setUpdateInfo(info);
+      if (info?.updateAvailable) {
+        notify(`Hound v${info.latestVersion} is available!`);
+      } else if (info?.error) {
+        notify(`Could not check for updates: ${info.error}`, true);
+      } else {
+        notify(`Hound is up to date (v${appVersion}).`);
+      }
+    } catch {
+      notify("Failed to check for updates. Check your connection.", true);
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
   const setting = (patch: Partial<Store["settings"]>) =>
     setStore((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
   const toggleNotifications = async () => {
@@ -4197,11 +4291,54 @@ function Settings({
             </button>
           </div>
         </section>
+        <section className="settings-card">
+          <h2>Application Updates</h2>
+          <p className="settings-description">
+            Hound checks GitHub Releases so you always know when updates and improvements are available.
+          </p>
+          <div className="settings-row">
+            <div>
+              <h3>Check for new versions</h3>
+              <p>
+                {checkingUpdate
+                  ? "Checking GitHub for updates..."
+                  : updateInfo?.updateAvailable
+                  ? `New version available: v${updateInfo.latestVersion} (${updateInfo.releaseName || "Latest build"})`
+                  : `Currently installed: v${appVersion}. You are running the latest version.`}
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              {updateInfo?.updateAvailable && (
+                <button
+                  className="button primary"
+                  onClick={() => {
+                    if (window.houndDesktop?.openExternal) {
+                      void window.houndDesktop.openExternal(updateInfo.releaseUrl);
+                    } else {
+                      window.open(updateInfo.releaseUrl, "_blank");
+                    }
+                  }}
+                >
+                  <Download size={15} />
+                  Download v{updateInfo.latestVersion}
+                </button>
+              )}
+              <button
+                className="button secondary"
+                disabled={checkingUpdate}
+                onClick={handleManualCheck}
+              >
+                <RefreshCw size={15} className={checkingUpdate ? "spin" : ""} />
+                {checkingUpdate ? "Checking..." : "Check now"}
+              </button>
+            </div>
+          </div>
+        </section>
         <div className="settings-about">
           <HoundMark size={33} />
           <div>
             <strong>Hound</strong>
-            <span>Your personal job search companion. v1.0</span>
+            <span>Your personal job search companion. v{appVersion}</span>
           </div>
           <span className="local-pill">
             <Monitor size={13} />

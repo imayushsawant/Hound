@@ -11,12 +11,16 @@ import {
   shell,
   Tray,
 } from "electron";
-import { basename, dirname, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { channels, type AppInfo } from "../../src/shared/api";
 import { Repository } from "./db/repository";
 import { registerDataIpcHandlers } from "./ipc";
 import {
+  copyResumesDirectory,
+  getDefaultResumesRootDir,
+  getResumesPathInfo,
   getResumesRootDir,
   resolveSafeResumePath,
   saveResumeFile,
@@ -34,6 +38,7 @@ let mainWindow: BrowserWindow | undefined;
 let quickAddWindow: BrowserWindow | undefined;
 let tray: Tray | undefined;
 let quitting = false;
+let currentCustomResumesPath: string | null = null;
 
 function trusted(event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent) {
   const expectedURL = devURL ? new URL(devURL).href : pathToFileURL(rendererFile).href;
@@ -170,6 +175,9 @@ if (!gotLock) {
       const initialWorkspace = repository.loadWorkspace();
       const loginEnabled = (initialWorkspace.settings as any)?.launchOnLogin ?? true;
       app.setLoginItemSettings({ openAtLogin: loginEnabled });
+      if ((initialWorkspace.settings as any)?.resumesPath) {
+        currentCustomResumesPath = (initialWorkspace.settings as any).resumesPath;
+      }
     } catch {}
     session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
       callback(false),
