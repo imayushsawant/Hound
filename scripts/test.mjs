@@ -7,6 +7,7 @@ const testFiles = [
   "tests/integration_audit.test.ts",
   "tests/locations.test.ts",
   "tests/sources.test.ts",
+  "tests/resumes.test.ts",
 ];
 const runner = process.env.TEST_WITH_ELECTRON ? electron : process.execPath;
 const result = spawnSync(
