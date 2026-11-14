@@ -23,6 +23,7 @@ import {
   type SaveResumeInput,
 } from "./resumes";
 import { Scheduler } from "./scheduler";
+import { checkForUpdate, type UpdateInfo } from "./updater";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rendererFile = join(here, "../renderer/index.html");
@@ -296,6 +297,18 @@ if (!gotLock) {
       trusted(event);
       return getResumesRootDir(app.getPath("userData"));
     });
+    ipcMain.handle("desktop:check-update", async (event) => {
+      trusted(event);
+      return checkForUpdate(app.getVersion());
+    });
+    ipcMain.handle("desktop:open-external", async (event, url: unknown) => {
+      trusted(event);
+      if (typeof url === "string" && /^https?:\/\//i.test(url)) {
+        void shell.openExternal(url);
+        return true;
+      }
+      return false;
+    });
     void repository.performDailyBackup();
     createWindow();
     scheduler = new Scheduler(repository!, {
@@ -303,6 +316,18 @@ if (!gotLock) {
       iconPath: join(here, "../renderer/hound.png"),
     });
     scheduler.start();
+
+    // Background update check on startup
+    setTimeout(async () => {
+      try {
+        const updateInfo = await checkForUpdate(app.getVersion());
+        if (updateInfo.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("desktop:update-available", updateInfo);
+        }
+      } catch (err) {
+        console.warn("Background update check failed", err);
+      }
+    }, 4000);
     const icon = nativeImage
       .createFromPath(join(here, "../renderer/hound.png"))
       .resize({ width: 20, height: 20 });

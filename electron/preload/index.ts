@@ -11,7 +11,7 @@ import {
   type CreateBoardInput,
   type UpdateBoardInput,
 } from "../../src/shared/api";
-import type { SaveResumeInput } from "../../src/desktop";
+import type { SaveResumeInput, UpdateInfo } from "../../src/desktop";
 
 const api: NudgeAPI = {
   getAppInfo: () => ipcRenderer.invoke(channels.appInfo),
@@ -92,5 +92,12 @@ contextBridge.exposeInMainWorld("houndDesktop", {
     } catch {
       return (file as any)?.path || "";
     }
+  },
+  checkUpdate: () => ipcRenderer.invoke("desktop:check-update"),
+  openExternal: (url: string) => ipcRenderer.invoke("desktop:open-external", url),
+  onUpdateAvailable: (listener: (info: UpdateInfo) => void) => {
+    const handler = (_event: any, info: UpdateInfo) => listener(info);
+    ipcRenderer.on("desktop:update-available", handler);
+    return () => ipcRenderer.removeListener("desktop:update-available", handler);
   },
 });

@@ -23,6 +23,17 @@ export interface SaveResumeResult {
   error?: string;
 }
 
+export interface UpdateInfo {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+  releaseUrl: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  publishedAt?: string;
+  error?: string;
+}
+
 export {};
 declare global {
   interface Window {
@@ -46,6 +57,9 @@ declare global {
       showItemInFolder?: (path: string) => Promise<boolean>;
       getResumesPath?: () => Promise<string>;
       getPathForFile?: (file: File) => string;
+      checkUpdate?: () => Promise<UpdateInfo>;
+      openExternal?: (url: string) => Promise<boolean>;
+      onUpdateAvailable?: (callback: (info: UpdateInfo) => void) => () => void;
     };
   }
 }

@@ -40,6 +40,7 @@ import {
   PanelLeftOpen,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   Settings2,
   ShieldCheck,
@@ -89,6 +90,7 @@ import {
   getResumeDisplayFileName,
   sanitizeFolderName,
 } from "./shared/resumes";
+import type { UpdateInfo } from "./desktop";
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
