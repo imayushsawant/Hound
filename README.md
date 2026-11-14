@@ -91,14 +91,6 @@ npm run dev:desktop
 npm run dev:web
 ```
 
-### Seeding Demo Data
-
-To populate your database with 5 sample companies and 8 applications across various interview stages:
-
-```sh
-npm run seed
-```
-
 ### Running Tests & Verification
 
 ```sh
