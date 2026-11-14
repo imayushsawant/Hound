@@ -138,6 +138,14 @@ Hound performs an automated SQLite snapshot on startup and during regular 15-min
 - Automatically retains the last **7 days** of daily backups, pruning older snapshots.
 - You can also export or import your entire workspace as a standalone `.json` file from the **Settings** page at any time.
 
+### Resume Storage & Organization
+
+When creating or updating an application, you can drop or select the specific resume used for that role. Hound automatically organizes resumes into nested backend folders accessible outside the application:
+- **Location**: `<userData>/resumes/<Company>/application-<role>-<date>/<resume-file>`
+  - e.g. `%APPDATA%\Hound\resumes\Stripe\application-software-development-intern-2026-11-14\Resume.pdf`
+- **Multiple Applications**: Multiple roles applied to the same company will each have their own nested folder and resume inside that company's folder.
+- **Direct Access**: Open the resumes directory from **Settings** → **Open resumes folder**, or click **Resumes folder** on any company's detail page, or click **Open folder** / **Open file** directly on an application's resume card.
+
 ---
 
 ## Keyboard Shortcuts
