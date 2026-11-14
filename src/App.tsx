@@ -3938,12 +3938,64 @@ function Settings({
   const [busy, setBusy] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [appVersion, setAppVersion] = useState("1.0.0");
+  const [resumesInfo, setResumesInfo] = useState<{
+    currentPath: string;
+    defaultPath: string;
+    isCustom: boolean;
+  }>({
+    currentPath: store.settings.resumesPath || "%APPDATA%\\Hound\\resumes",
+    defaultPath: "%APPDATA%\\Hound\\resumes",
+    isCustom: Boolean(store.settings.resumesPath),
+  });
 
   useEffect(() => {
     window.hound?.getAppInfo?.().then((info) => {
       if (info?.version) setAppVersion(info.version);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (window.houndDesktop?.getResumesPath) {
+      window.houndDesktop.getResumesPath().then(setResumesInfo).catch(() => {});
+    }
+  }, [store.settings.resumesPath]);
+
+  const handleChangeResumesFolder = async () => {
+    if (!window.houndDesktop?.selectResumesFolder || !window.houndDesktop?.setResumesPath) {
+      notify("Custom resumes folder is supported in the desktop app.", true);
+      return;
+    }
+    try {
+      const selected = await window.houndDesktop.selectResumesFolder();
+      if (!selected) return;
+
+      const copyExisting = confirm(
+        `Would you like to copy any existing resumes to your new folder?\n\n${selected}`,
+      );
+
+      const updated = await window.houndDesktop.setResumesPath(selected, copyExisting);
+      setResumesInfo(updated);
+      setting({ resumesPath: updated.isCustom ? updated.currentPath : undefined });
+      notify("Resumes folder updated successfully.");
+    } catch (err: any) {
+      notify(err?.message || "Failed to update resumes folder.", true);
+    }
+  };
+
+  const handleResetResumesFolder = async () => {
+    if (!window.houndDesktop?.setResumesPath) return;
+    try {
+      const copyExisting = confirm(
+        "Would you like to copy resumes from your custom folder back to the default folder?",
+      );
+      const updated = await window.houndDesktop.setResumesPath(null, copyExisting);
+      setResumesInfo(updated);
+      setting({ resumesPath: undefined });
+      notify("Resumes folder reset to default.");
+    } catch (err: any) {
+      notify(err?.message || "Failed to reset resumes folder.", true);
+    }
+  };
 
   const handleManualCheck = async () => {
     if (!window.houndDesktop?.checkUpdate) {
@@ -4243,24 +4295,104 @@ function Settings({
               Open data folder
             </button>
           </div>
-          <div className="settings-row">
-            <div>
-              <h3>Resumes directory</h3>
-              <p>Nested company folders with all resumes used across your applications.</p>
+          <div className="settings-row" style={{ alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 0, paddingRight: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "4px",
+                }}
+              >
+                <h3 style={{ margin: 0 }}>Resumes directory</h3>
+                <span
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    padding: "1px 6px",
+                    borderRadius: "4px",
+                    background: resumesInfo.isCustom ? "#eef4eb" : "#f1f3ee",
+                    color: resumesInfo.isCustom ? "#3d5c28" : "#6c7a60",
+                    border: `1px solid ${resumesInfo.isCustom ? "#c3d6ba" : "#d9ded5"}`,
+                  }}
+                >
+                  {resumesInfo.isCustom ? "Custom location" : "Default"}
+                </span>
+              </div>
+              <p style={{ margin: "0 0 8px 0" }}>
+                Choose where Hound stores your nested company and application resume folders.
+              </p>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "#f4f6f2",
+                  border: "1px solid #d9e1d4",
+                  borderRadius: "6px",
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  color: "#3d4e2f",
+                  fontFamily: "monospace",
+                  maxWidth: "100%",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+                title={resumesInfo.currentPath}
+              >
+                <FolderOpen size={13} style={{ flexShrink: 0, color: "#617750" }} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {resumesInfo.currentPath}
+                </span>
+              </div>
             </div>
-            <button
-              className="button secondary"
-              onClick={() => {
-                if (window.houndDesktop?.openResumesFolder) {
-                  window.houndDesktop.openResumesFolder();
-                } else {
-                  notify("Resumes folder access is available in the desktop app.", true);
-                }
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: "8px",
+                flexShrink: 0,
               }}
             >
-              <FolderOpen size={15} />
-              Open resumes folder
-            </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  if (window.houndDesktop?.openResumesFolder) {
+                    window.houndDesktop.openResumesFolder();
+                  } else {
+                    notify("Resumes folder access is available in the desktop app.", true);
+                  }
+                }}
+                title="Open resumes folder in File Explorer"
+              >
+                <FolderOpen size={15} />
+                Open folder
+              </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={handleChangeResumesFolder}
+                title="Choose a custom directory for your resumes"
+              >
+                <Pencil size={14} />
+                Change folder...
+              </button>
+              {resumesInfo.isCustom && (
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={handleResetResumesFolder}
+                  title="Reset to default %APPDATA%\\Hound\\resumes"
+                  style={{ color: "#7a6245" }}
+                >
+                  Reset to default
+                </button>
+              )}
+            </div>
           </div>
           <div className="settings-row">
             <div>
