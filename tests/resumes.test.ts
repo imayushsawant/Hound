@@ -15,6 +15,8 @@ import {
   saveResumeFile,
   resolveSafeResumePath,
   getResumesRootDir,
+  getResumesPathInfo,
+  copyResumesDirectory,
 } from "../electron/main/resumes.ts";
 
 test("buildApplicationFolderName formats application-role-date correctly", () => {
@@ -174,5 +176,74 @@ test("user scenario: Stripe company with Software Development Intern application
     assert.equal(existsSync(result2.fullPath), true);
   } finally {
     rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("custom resumes directory setting, copying, and resolution", () => {
+  const userDir = mkdtempSync(join(tmpdir(), "hound-user-dir-"));
+  const customDir = mkdtempSync(join(tmpdir(), "hound-custom-resumes-"));
+
+  try {
+    // 1. Initial default path info
+    const infoDefault = getResumesPathInfo(userDir, null);
+    assert.equal(infoDefault.isCustom, false);
+    assert.equal(infoDefault.currentPath, join(userDir, "resumes"));
+    assert.equal(infoDefault.defaultPath, join(userDir, "resumes"));
+
+    // Save a resume to default directory
+    const defaultSaved = saveResumeFile(userDir, {
+      companyName: "Stripe",
+      role: "Backend Engineer",
+      date: "2026-11-14",
+      fileName: "Default_Resume.pdf",
+      fileBuffer: Buffer.from("Default location content"),
+    });
+    assert.equal(existsSync(defaultSaved.fullPath), true);
+
+    // 2. Custom path info
+    const infoCustom = getResumesPathInfo(userDir, customDir);
+    assert.equal(infoCustom.isCustom, true);
+    assert.equal(infoCustom.currentPath, customDir);
+
+    // 3. Test copyResumesDirectory from default to custom
+    copyResumesDirectory(infoDefault.currentPath, customDir);
+    const copiedFile = join(
+      customDir,
+      "Stripe",
+      "application-backend-engineer-2026-11-14",
+      "Default_Resume.pdf",
+    );
+    assert.equal(existsSync(copiedFile), true);
+    assert.equal(readFileSync(copiedFile, "utf-8"), "Default location content");
+
+    // 4. Save resume directly to custom directory
+    const customSaved = saveResumeFile(
+      userDir,
+      {
+        companyName: "Vercel",
+        role: "Systems Engineer",
+        date: "2026-11-15",
+        fileName: "Vercel_Resume.pdf",
+        fileBuffer: Buffer.from("Vercel custom content"),
+      },
+      customDir,
+    );
+    assert.equal(customSaved.fullPath.startsWith(customDir), true);
+    assert.equal(existsSync(customSaved.fullPath), true);
+
+    // 5. resolveSafeResumePath allows paths in custom directory
+    const resolvedCustom = resolveSafeResumePath(userDir, customSaved.relativePath, customDir);
+    assert.equal(resolvedCustom, customSaved.fullPath);
+
+    // Also allows absolute paths in default directory
+    const resolvedDefault = resolveSafeResumePath(userDir, defaultSaved.fullPath, customDir);
+    assert.equal(resolvedDefault, defaultSaved.fullPath);
+
+    // Rejects paths outside both
+    const malicious = resolveSafeResumePath(userDir, "../../../secret.txt", customDir);
+    assert.equal(malicious, null);
+  } finally {
+    rmSync(userDir, { recursive: true, force: true });
+    rmSync(customDir, { recursive: true, force: true });
   }
 });

@@ -81,6 +81,7 @@ export type Store = {
     followUpDays?: number;
     schedulerEnabled?: boolean;
     country?: string;
+    resumesPath?: string;
   };
 };
 export const uid = () => crypto.randomUUID();
@@ -508,7 +509,8 @@ export function validStore(data: unknown): data is Store {
       typeof s.settings.launchOnLogin === "boolean" &&
       (s.settings.followUpDays === undefined || typeof s.settings.followUpDays === "number") &&
       (s.settings.schedulerEnabled === undefined || typeof s.settings.schedulerEnabled === "boolean") &&
-      (s.settings.country === undefined || typeof s.settings.country === "string")
+      (s.settings.country === undefined || typeof s.settings.country === "string") &&
+      (s.settings.resumesPath === undefined || typeof s.settings.resumesPath === "string")
     );
   } catch {
     return false;
