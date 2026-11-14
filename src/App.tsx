@@ -622,7 +622,20 @@ function App() {
             <PanelLeftClose size={18} />
           </button>
         </div>
-        <div className="workspace-switch">
+        <div
+          className="workspace-switch"
+          onClick={() => navigate("Overview")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate("Overview");
+            }
+          }}
+          style={{ cursor: "pointer" }}
+          title="Go to workspace home"
+        >
           <span className="workspace-avatar">
             A<span />
           </span>
@@ -631,7 +644,14 @@ function App() {
           </div>
           <ChevronDown size={14} />
         </div>
-        <span className="nav-label">WORKSPACE</span>
+        <span
+          className="nav-label"
+          onClick={() => navigate("Overview")}
+          style={{ cursor: "pointer" }}
+          title="Go to workspace home"
+        >
+          WORKSPACE
+        </span>
         <nav aria-label="Main navigation">
           {(
             [
@@ -706,9 +726,61 @@ function App() {
             >
               {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
-            <span>Workspace</span>
+            <button
+              type="button"
+              className="breadcrumb-link"
+              onClick={() => navigate("Overview")}
+              title="Go to workspace home"
+            >
+              Workspace
+            </button>
             <ChevronRight size={13} />
-            <strong>{app ? "Application details" : company ? company.name : page}</strong>
+            {company && (
+              <>
+                <button
+                  type="button"
+                  className="breadcrumb-link"
+                  onClick={() => {
+                    setSelectedCompany(null);
+                    setPage("Companies");
+                    window.location.hash = "/companies";
+                  }}
+                  title="Go to companies"
+                >
+                  Companies
+                </button>
+                <ChevronRight size={13} />
+              </>
+            )}
+            {app && (
+              <>
+                <button
+                  type="button"
+                  className="breadcrumb-link"
+                  onClick={() => {
+                    setSelectedApp(null);
+                    setActiveNoteRoute(null);
+                    setPage("Applications");
+                    window.location.hash = "/applications";
+                  }}
+                  title="Go to applications"
+                >
+                  Applications
+                </button>
+                <ChevronRight size={13} />
+              </>
+            )}
+            <strong className="breadcrumb-current">
+              {app
+                ? activeNoteRoute
+                  ? activeNoteRoute.type === "prep"
+                    ? "Prep notes"
+                    : "Interview notes"
+                  : app.role
+                : company
+                  ? company.name
+                  : page}
+            </strong>
           </div>
           <div className="topbar-right">
             <div className="notification-wrap">
