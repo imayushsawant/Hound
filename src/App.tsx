@@ -36,6 +36,8 @@ import {
   MapPin,
   Monitor,
   MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Plus,
   Search,
@@ -149,6 +151,24 @@ function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("hound-sidebar-collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("hound-sidebar-collapsed", String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
   const skipDesktopSave = useRef(false);
   const notify = useCallback((message: string, error = false) => setToast({ message, error }), []);
   useEffect(() => {
@@ -224,6 +244,18 @@ function App() {
       ) {
         e.preventDefault();
         setModal("application");
+      }
+      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        setSidebarCollapsed((prev) => {
+          const next = !prev;
+          try {
+            localStorage.setItem("hound-sidebar-collapsed", String(next));
+          } catch {
+            // ignore
+          }
+          return next;
+        });
       }
       if (!isInput && (e.key === "?" || (e.shiftKey && e.key === "/"))) {
         e.preventDefault();
@@ -533,22 +565,35 @@ function App() {
   );
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       {mobileNav && <div className="nav-scrim" onClick={() => setMobileNav(false)} />}
       <aside className={`sidebar ${mobileNav ? "is-open" : ""}`}>
-        <a
-          href="#"
-          className="brand"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("Overview");
-          }}
-        >
-          <HoundMark size={35} />
-          <span>
-            hound<span className="brand-period">.</span>
-          </span>
-        </a>
+        <div className="sidebar-header">
+          <a
+            href="#"
+            className="brand"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("Overview");
+            }}
+          >
+            <HoundMark size={35} />
+            <span>
+              hound<span className="brand-period">.</span>
+            </span>
+          </a>
+          <button
+            className="sidebar-collapse-btn icon-button"
+            onClick={() => {
+              if (mobileNav) setMobileNav(false);
+              else toggleSidebar();
+            }}
+            title="Collapse sidebar (Ctrl+B)"
+            aria-label="Collapse sidebar"
+          >
+            <PanelLeftClose size={18} />
+          </button>
+        </div>
         <div className="workspace-switch">
           <span className="workspace-avatar">
             A<span />
@@ -596,26 +641,6 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="small-momentum">
-            <div className="momentum-icon">
-              <Sparkles size={17} />
-            </div>
-            <h3>A little every day.</h3>
-            <p>
-              Your next opportunity is out there.
-              <br />
-              Keep showing up.
-            </p>
-            <div className="momentum-line">
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
           <button
             className={`nav-item ${page === "Settings" ? "active" : ""}`}
             onClick={() => navigate("Settings")}
@@ -644,6 +669,14 @@ function App() {
               onClick={() => setMobileNav(true)}
             >
               <LayoutDashboard size={19} />
+            </button>
+            <button
+              className="sidebar-toggle-btn icon-button"
+              aria-label={sidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+              title={sidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
+              onClick={toggleSidebar}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
             </button>
             <span>Workspace</span>
             <ChevronRight size={13} />
