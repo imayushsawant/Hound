@@ -17,6 +17,74 @@ export type WorkMode = (typeof WorkModes)[number];
 export const RoundStatuses = ["upcoming", "done", "skipped"] as const;
 export type RoundStatus = (typeof RoundStatuses)[number];
 
+export const APPLICATION_SOURCE_GROUPS = [
+  {
+    category: "Popular Job Platforms",
+    sources: [
+      "LinkedIn",
+      "Naukri",
+      "Internshala",
+      "Wellfound",
+      "Indeed",
+      "Glassdoor",
+      "Instahyre",
+      "Cutshort",
+    ],
+  },
+  {
+    category: "Direct & Portals",
+    sources: [
+      "Career portal",
+      "Company website",
+      "Job board",
+    ],
+  },
+  {
+    category: "Messaging & Channels",
+    sources: [
+      "WhatsApp channels",
+      "Telegram channels",
+      "Discord community",
+    ],
+  },
+  {
+    category: "Network & Outreach",
+    sources: [
+      "Referral",
+      "Recruiter outreach",
+      "Cold outreach",
+      "Campus placement",
+    ],
+  },
+] as const;
+
+export const ALL_PRESET_SOURCES: string[] = APPLICATION_SOURCE_GROUPS.flatMap(
+  (group) => group.sources
+);
+
+export function matchPresetSource(val: string | null | undefined): string | null {
+  if (!val || !val.trim()) return null;
+  const clean = val.trim().toLowerCase();
+
+  const found = ALL_PRESET_SOURCES.find((s) => s.toLowerCase() === clean);
+  if (found) return found;
+
+  if (clean === "nokri" || clean === "naukri.com") return "Naukri";
+  if (clean.includes("whatsapp")) return "WhatsApp channels";
+  if (clean.includes("telegram")) return "Telegram channels";
+  if (clean.includes("career") || clean.includes("careers")) return "Career portal";
+  if (clean.includes("angellist")) return "Wellfound";
+  if (clean.includes("recruiter")) return "Recruiter outreach";
+  if (clean.includes("referral")) return "Referral";
+  if (clean.includes("internshala")) return "Internshala";
+  if (clean.includes("linkedin")) return "LinkedIn";
+  if (clean.includes("website")) return "Company website";
+  if (clean.includes("board")) return "Job board";
+
+  return null;
+}
+
+
 export interface Company {
   id: number;
   name: string;
