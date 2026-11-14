@@ -3614,6 +3614,7 @@ kbd {
   padding: 16px;
   user-select: none;
   border: 1px solid #d5dfc9;
+  overflow: hidden;
 }
 
 .quick-add-input,

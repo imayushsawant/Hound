@@ -60,8 +60,8 @@ function openQuickAddWindow() {
   }
 
   const win = new BrowserWindow({
-    width: 440,
-    height: 280,
+    width: 480,
+    height: 360,
     frame: false,
     resizable: false,
     alwaysOnTop: true,
