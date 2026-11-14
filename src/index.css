@@ -110,6 +110,34 @@
   z-index: 30;
   display: flex;
   flex-direction: column;
+  transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), visibility 0.22s;
+}
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 4px 35px 11px;
+}
+.sidebar-header .brand {
+  margin: 0;
+}
+.sidebar-collapse-btn {
+  color: #8b9283;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-collapse-btn:hover {
+  background: #e9ecdf;
+  color: #3b4233;
 }
 .brand {
   display: flex;
@@ -318,6 +346,31 @@
 }
 .main-shell {
   margin-left: var(--sidebar);
+  transition: margin-left 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+.sidebar-toggle-btn {
+  color: #7b8172;
+  margin-right: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+.sidebar-toggle-btn:hover {
+  color: #3b4233;
+  background: #f0f2e9;
+}
+@media (min-width: 761px) {
+  .app-shell.sidebar-collapsed .sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .app-shell.sidebar-collapsed .main-shell {
+    margin-left: 0;
+  }
+  .app-shell.sidebar-collapsed .toast {
+    left: 50%;
+  }
 }
 .topbar {
   height: 70px;
@@ -2586,6 +2639,7 @@ kbd {
   max-width: 85vw;
   font-size: 12px;
   animation: toast-in 0.2s ease;
+  transition: left 0.22s cubic-bezier(0.2, 0, 0, 1);
 }
 .toast > button {
   display: flex;
@@ -2944,6 +2998,10 @@ kbd {
   }
   .sidebar.is-open {
     transform: translateX(0);
+    visibility: visible;
+  }
+  .sidebar-toggle-btn {
+    display: none;
   }
   .nav-scrim {
     position: fixed;
@@ -3587,6 +3645,17 @@ kbd {
   .sidebar {
     background: #171b15 !important;
     border-color: #272d22 !important;
+  }
+
+  .sidebar-collapse-btn,
+  .sidebar-toggle-btn {
+    color: #9aa591 !important;
+  }
+
+  .sidebar-collapse-btn:hover,
+  .sidebar-toggle-btn:hover {
+    color: #eceee8 !important;
+    background: rgba(255, 255, 255, 0.08) !important;
   }
 
   .brand > span {
