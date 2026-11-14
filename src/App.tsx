@@ -718,14 +718,16 @@ function App() {
             >
               <LayoutDashboard size={19} />
             </button>
-            <button
-              className="sidebar-toggle-btn icon-button"
-              aria-label={sidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-              title={sidebarCollapsed ? "Expand sidebar (Ctrl+B)" : "Collapse sidebar (Ctrl+B)"}
-              onClick={toggleSidebar}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-            </button>
+            {sidebarCollapsed && (
+              <button
+                className="sidebar-toggle-btn icon-button"
+                aria-label="Expand sidebar (Ctrl+B)"
+                title="Expand sidebar (Ctrl+B)"
+                onClick={toggleSidebar}
+              >
+                <PanelLeftOpen size={18} />
+              </button>
+            )}
             <button
               type="button"
               className="breadcrumb-link"
