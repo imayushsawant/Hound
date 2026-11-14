@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ApplicationStatuses, type ApplicationStatus, type Company } from "./shared/api";
-import { Check, HoundMark, X } from "./icons";
+import { ArrowRight, Check, HoundMark, X } from "./icons";
+
+interface CreatedApplicationInfo {
+  id: number | string;
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+}
 
 export function QuickAdd() {
   const [company, setCompany] = useState("");
@@ -8,6 +15,19 @@ export function QuickAdd() {
   const [status, setStatus] = useState<ApplicationStatus>("Applied");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [createdApp, setCreatedApp] = useState<CreatedApplicationInfo | null>(null);
+
+  const handleClose = () => {
+    window.houndDesktop?.closeQuickAdd?.();
+  };
+
+  const handleAddMoreDetails = (appId: number | string) => {
+    if (window.houndDesktop?.openQuickAddDetails) {
+      window.houndDesktop.openQuickAddDetails(appId);
+    } else {
+      window.location.hash = `/applications/${appId}`;
+    }
+  };
 
   useEffect(() => {
     // Load companies for autocomplete if available
@@ -16,12 +36,24 @@ export function QuickAdd() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        window.houndDesktop?.closeQuickAdd?.();
+        handleClose();
+        return;
+      }
+
+      if (createdApp) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          if (document.activeElement?.tagName === "BUTTON") return;
+          e.preventDefault();
+          handleClose();
+        } else if (e.key.toLowerCase() === "d" && !e.ctrlKey && !e.altKey && !e.metaKey) {
+          e.preventDefault();
+          handleAddMoreDetails(createdApp.id);
+        }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [createdApp]);
 
   const handleSubmit = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -31,19 +63,115 @@ export function QuickAdd() {
 
     setSubmitting(true);
     try {
+      let createdId: number | string = Date.now();
       if (window.nudge?.createApplication) {
-        await window.nudge.createApplication({
+        const created = await window.nudge.createApplication({
           company_name: compName,
           role: roleName,
           status,
         });
+        if (created?.id) {
+          createdId = created.id;
+        }
       }
-      window.houndDesktop?.closeQuickAdd?.();
+      setCreatedApp({
+        id: createdId,
+        company: compName,
+        role: roleName,
+        status,
+      });
     } catch (err) {
       console.error("Quick add failed:", err);
+    } finally {
       setSubmitting(false);
     }
   };
+
+  if (createdApp) {
+    return (
+      <div className="quick-add-window">
+        <div
+          style={
+            {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "12px",
+              paddingBottom: "8px",
+              borderBottom: "1px solid var(--border)",
+              WebkitAppRegion: "drag",
+            } as any
+          }
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <HoundMark size={20} />
+            <span style={{ fontSize: "13px", fontWeight: 600 }}>Quick Add Application</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            style={
+              {
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#8a9978",
+                display: "flex",
+                alignItems: "center",
+                padding: "2px",
+                WebkitAppRegion: "no-drag",
+              } as any
+            }
+            title="Close (Esc)"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="quick-add-success-body">
+          <div className="quick-add-success-icon">
+            <Check size={22} strokeWidth={2.5} />
+          </div>
+
+          <h2 className="quick-add-success-title">Application created</h2>
+          <p className="quick-add-success-subtitle">
+            Keep the momentum going. Choose your next step:
+          </p>
+
+          <div className="quick-add-summary-card">
+            <div style={{ overflow: "hidden", textOverflow: "ellipsis", marginRight: "12px" }}>
+              <div className="quick-add-summary-company">{createdApp.company}</div>
+              <div className="quick-add-summary-role">{createdApp.role}</div>
+            </div>
+            <span className="quick-add-summary-status">{createdApp.status}</span>
+          </div>
+
+          <div className="quick-add-actions">
+            <button
+              type="button"
+              className="quick-add-btn-secondary"
+              onClick={handleClose}
+              autoFocus
+            >
+              Proceed
+            </button>
+            <button
+              type="button"
+              className="quick-add-btn-primary"
+              onClick={() => handleAddMoreDetails(createdApp.id)}
+            >
+              Add more details
+              <ArrowRight size={14} />
+            </button>
+          </div>
+
+          <div className="quick-add-footer-hint">
+            Press <kbd>Enter</kbd> or <kbd>Esc</kbd> to proceed · Press <kbd>D</kbd> to add details
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="quick-add-window">
@@ -62,13 +190,11 @@ export function QuickAdd() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <HoundMark size={20} />
-          <span style={{ fontSize: "13px", fontWeight: 600 }}>
-            Quick Add Application
-          </span>
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>Quick Add Application</span>
         </div>
         <button
           type="button"
-          onClick={() => window.houndDesktop?.closeQuickAdd?.()}
+          onClick={handleClose}
           style={
             {
               background: "transparent",
@@ -189,7 +315,7 @@ export function QuickAdd() {
             }}
           >
             <Check size={14} />
-            Save
+            {submitting ? "Saving..." : "Save"}
           </button>
         </div>
       </form>

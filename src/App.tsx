@@ -92,7 +92,14 @@ import {
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
-type Toast = { message: string; error?: boolean };
+type Toast = {
+  message: string;
+  error?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+};
 type NoteRoute = {
   applicationId: string;
   roundId: string;
@@ -412,7 +419,13 @@ function App() {
     }));
     setModal(null);
     setNewCompany("");
-    notify("Application added. Here’s to your next chapter.");
+    setToast({
+      message: "Application added. Here’s to your next chapter.",
+      action: {
+        label: "Add more details",
+        onClick: () => openApp(String(application.id)),
+      },
+    });
   };
   const openApp = (id: string) => {
     setSelectedApp(id);
@@ -527,11 +540,17 @@ function App() {
     notify(`Removed ${name}.`);
   };
   const reminderCount = dueApplications(store).length + store.boards.filter(boardDue).length;
-  const app = store.applications.find((a) => a.id === selectedApp);
+  const app = store.applications.find(
+    (a) => a.id === selectedApp || String(a.id) === String(selectedApp),
+  );
   const company = store.companies.find((c) => c.id === selectedCompany);
 
   const activeNoteApp = activeNoteRoute
-    ? store.applications.find((a) => a.id === activeNoteRoute.applicationId)
+    ? store.applications.find(
+        (a) =>
+          a.id === activeNoteRoute.applicationId ||
+          String(a.id) === String(activeNoteRoute.applicationId),
+      )
     : null;
   const activeNoteRound =
     activeNoteApp && activeNoteRoute
@@ -1345,6 +1364,18 @@ function App() {
         <div role="status" className={`toast ${toast.error ? "error" : ""}`}>
           <CircleCheck size={18} />
           <span>{toast.message}</span>
+          {toast.action && (
+            <button
+              type="button"
+              className="toast-action-btn"
+              onClick={() => {
+                toast.action!.onClick();
+                setToast(null);
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
           <button aria-label="Dismiss notification" onClick={() => setToast(null)}>
             <X size={15} />
           </button>

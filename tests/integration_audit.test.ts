@@ -372,3 +372,35 @@ test("integration: edit company overview from company page or application detail
     ctx.close();
   }
 });
+
+// --------------------------------------------------------------------------
+// 7. Quick-add application returns created application id and allows
+//    navigating directly to the application detail route in store.
+// --------------------------------------------------------------------------
+test("integration: quick-add creates application with valid id that resolves in workspace for detail view", () => {
+  const ctx = createTestContext();
+  try {
+    const { repo } = ctx;
+
+    const created = repo.createApplication({
+      company_name: "Notion",
+      role: "Fullstack Engineer",
+      status: "Applied",
+    });
+
+    assert.ok(created.id, "Created application must have an id");
+    assert.equal(created.role, "Fullstack Engineer");
+    assert.equal(created.company_name, "Notion");
+
+    // Load store as the main window would
+    const store = repo.loadWorkspace();
+    const appInStore = store.applications.find(
+      (a) => a.id === String(created.id) || a.id === created.id,
+    );
+
+    assert.ok(appInStore, "Created application must be found in workspace by created id");
+    assert.equal(appInStore.role, "Fullstack Engineer");
+  } finally {
+    ctx.close();
+  }
+});
