@@ -80,6 +80,9 @@ import {
 } from "./data";
 import { NoteEditor } from "./NoteEditor";
 import { QuickAdd } from "./QuickAdd";
+import { COUNTRIES } from "./locations";
+import { LocationSelector } from "./LocationSelector";
+import { SourceSelect } from "./SourceSelect";
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
@@ -765,6 +768,7 @@ function App() {
           ) : app ? (
             <ApplicationDetail
               application={app}
+              country={store.settings.country}
               company={
                 store.companies.find((c) => c.id === app.companyId) || {
                   id: app.companyId,
@@ -1262,6 +1266,7 @@ function App() {
         <ApplicationModal
           companies={store.companies}
           initialCompany={newCompany}
+          country={store.settings.country}
           onClose={() => setModal(null)}
           onSave={addApplication}
         />
@@ -1459,7 +1464,7 @@ function ApplicationsTable({
             (tab === "Archived" && !matchesActiveRule);
 
           const matchesStage = stage === "All stages" || a.stage === stage;
-          const matchesQuery = `${companyName} ${a.role} ${a.location}`
+          const matchesQuery = `${companyName} ${a.role} ${a.location} ${a.source || ""}`
             .toLowerCase()
             .includes(query.toLowerCase());
 
@@ -2006,11 +2011,13 @@ function ModalFrame({
 function ApplicationModal({
   companies,
   initialCompany,
+  country,
   onClose,
   onSave,
 }: {
   companies: Company[];
   initialCompany: string;
+  country?: string;
   onClose: () => void;
   onSave: (a: Application, c?: Company) => void;
 }) {
@@ -2148,25 +2155,18 @@ function ApplicationModal({
               </label>
               <label>
                 Source
-                <select value={source} onChange={(e) => setSource(e.target.value)}>
-                  {[
-                    "Company website",
-                    "LinkedIn",
-                    "Wellfound",
-                    "Referral",
-                    "Recruiter",
-                    "Other",
-                  ].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
+                <SourceSelect
+                  value={source}
+                  onChange={setSource}
+                />
               </label>
               <label>
                 Location
-                <input
-                  placeholder="e.g. San Francisco or Remote"
+                <LocationSelector
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={setLocation}
+                  country={country}
+                  placeholder="Select location..."
                 />
               </label>
               <label>
@@ -2362,6 +2362,7 @@ function isRoundOverdue(r: Round): boolean {
 function ApplicationDetail({
   application: a,
   company,
+  country,
   onBack,
   onUpdate,
   onUpdateCompany,
@@ -2371,6 +2372,7 @@ function ApplicationDetail({
 }: {
   application: Application;
   company: Company;
+  country?: string;
   onBack: () => void;
   onUpdate: (patch: Partial<Application>) => void;
   onUpdateCompany: (patch: Partial<Company>) => void;
@@ -2596,6 +2598,12 @@ function ApplicationDetail({
                 <BriefcaseBusiness size={14} />
                 {a.mode}
               </span>
+              {a.source ? (
+                <span>
+                  <Globe size={14} />
+                  {a.source}
+                </span>
+              ) : null}
               <span>
                 <CalendarDays size={14} />
                 Applied {formatDate(a.applied)}
@@ -2665,11 +2673,18 @@ function ApplicationDetail({
 
             <label>
               Location
-              <input
+              <LocationSelector
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(val) => {
+                  setLocation(val);
+                  if (val !== a.location) {
+                    onUpdate({ location: val });
+                    triggerOverviewSaved();
+                  }
+                }}
                 onBlur={() => handleOverviewBlur("location", location, a.location)}
-                placeholder="e.g. San Francisco, CA or Remote"
+                country={country}
+                placeholder="Select location..."
               />
             </label>
 
@@ -2691,11 +2706,17 @@ function ApplicationDetail({
 
             <label>
               Source
-              <input
+              <SourceSelect
                 value={source}
-                onChange={(e) => setSource(e.target.value)}
-                onBlur={() => handleOverviewBlur("source", source, a.source)}
-                placeholder="e.g. LinkedIn, Referral, Careers page"
+                onChange={(val) => {
+                  setSource(val);
+                  if (val !== a.source) {
+                    onUpdate({ source: val });
+                    triggerOverviewSaved();
+                  }
+                }}
+                onBlur={(val) => handleOverviewBlur("source", val, a.source)}
+                placeholder="Select source (optional)..."
               />
             </label>
 
@@ -3760,6 +3781,33 @@ function Settings({
             >
               <span />
             </button>
+          </div>
+          <div className="settings-row">
+            <div>
+              <h3>Preferred country</h3>
+              <p>Prioritizes cities from your country in the location dropdown when adding applications.</p>
+            </div>
+            <select
+              aria-label="Preferred country"
+              value={store.settings.country || "India"}
+              onChange={(e) => {
+                const country = e.target.value;
+                setting({ country });
+                notify(`Preferred country set to ${country}.`);
+              }}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                fontSize: "12px",
+                width: "auto",
+              }}
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="settings-row">
             <div>

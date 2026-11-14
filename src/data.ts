@@ -80,6 +80,7 @@ export type Store = {
     name: string;
     followUpDays?: number;
     schedulerEnabled?: boolean;
+    country?: string;
   };
 };
 export const uid = () => crypto.randomUUID();
@@ -386,6 +387,7 @@ export function createSeed(): Store {
       name: "Alex",
       followUpDays: 7,
       schedulerEnabled: true,
+      country: "India",
     },
   };
 }
@@ -486,7 +488,8 @@ export function validStore(data: unknown): data is Store {
       typeof s.settings.notifications === "boolean" &&
       typeof s.settings.launchOnLogin === "boolean" &&
       (s.settings.followUpDays === undefined || typeof s.settings.followUpDays === "number") &&
-      (s.settings.schedulerEnabled === undefined || typeof s.settings.schedulerEnabled === "boolean")
+      (s.settings.schedulerEnabled === undefined || typeof s.settings.schedulerEnabled === "boolean") &&
+      (s.settings.country === undefined || typeof s.settings.country === "string")
     );
   } catch {
     return false;

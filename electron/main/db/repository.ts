@@ -760,6 +760,7 @@ export class Repository {
             launchOnLogin: true,
             followUpDays: 7,
             schedulerEnabled: true,
+            country: "India",
             ...JSON.parse(preferences.value),
           }
         : {
@@ -768,6 +769,7 @@ export class Repository {
             launchOnLogin: true,
             followUpDays: 7,
             schedulerEnabled: true,
+            country: "India",
           },
     };
   }

@@ -602,7 +602,7 @@ test("scheduler checks due boards, follow-ups, and rounds with daily de-duplicat
   }
 });
 
-test("settings defaults and persistence for launchOnLogin, followUpDays, and schedulerEnabled", () => {
+test("settings defaults and persistence for launchOnLogin, followUpDays, schedulerEnabled, and country", () => {
   const fixture = createTestRepo();
   try {
     const { repo } = fixture;
@@ -612,6 +612,7 @@ test("settings defaults and persistence for launchOnLogin, followUpDays, and sch
     assert.equal(initial.settings.launchOnLogin, true);
     assert.equal(initial.settings.followUpDays, 7);
     assert.equal(initial.settings.schedulerEnabled, true);
+    assert.equal(initial.settings.country, "India");
 
     // 2. Modify settings and save workspace
     const updatedStore = {
@@ -621,6 +622,7 @@ test("settings defaults and persistence for launchOnLogin, followUpDays, and sch
         launchOnLogin: false,
         followUpDays: 14,
         schedulerEnabled: false,
+        country: "United States",
       },
     };
     repo.saveWorkspace(updatedStore);
@@ -630,6 +632,7 @@ test("settings defaults and persistence for launchOnLogin, followUpDays, and sch
     assert.equal(reloaded.settings.launchOnLogin, false);
     assert.equal(reloaded.settings.followUpDays, 14);
     assert.equal(reloaded.settings.schedulerEnabled, false);
+    assert.equal(reloaded.settings.country, "United States");
   } finally {
     fixture.close();
   }
