@@ -222,7 +222,7 @@ export function ResumeDropzone({
               <div style={{ minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     color: "#27341e",
                     overflow: "hidden",
@@ -235,16 +235,16 @@ export function ResumeDropzone({
                 </div>
                 <div
                   style={{
-                    fontSize: "11px",
+                    fontSize: "12.5px",
                     color: "#6b7c5c",
                     display: "flex",
                     alignItems: "center",
-                    gap: "4px",
+                    gap: "5px",
                     marginTop: "2px",
                   }}
                   title={`Stored in: ${displayFolder}`}
                 >
-                  <FolderOpen size={12} />
+                  <FolderOpen size={13} />
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {displayFolder}
                   </span>
@@ -252,7 +252,7 @@ export function ResumeDropzone({
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
               {value && window.houndDesktop?.openPath && (
                 <button
                   type="button"
@@ -262,17 +262,17 @@ export function ResumeDropzone({
                     background: "#ffffff",
                     border: "1px solid #c9d6be",
                     borderRadius: "6px",
-                    padding: "4px 8px",
-                    fontSize: "11px",
+                    padding: "5px 10px",
+                    fontSize: "12.5px",
                     fontWeight: 500,
                     color: "#3f542b",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    gap: "4px",
+                    gap: "5px",
                   }}
                 >
-                  <ExternalLink size={13} />
+                  <ExternalLink size={14} />
                   <span>Open file</span>
                 </button>
               )}
@@ -286,17 +286,17 @@ export function ResumeDropzone({
                     background: "#ffffff",
                     border: "1px solid #c9d6be",
                     borderRadius: "6px",
-                    padding: "4px 8px",
-                    fontSize: "11px",
+                    padding: "5px 10px",
+                    fontSize: "12.5px",
                     fontWeight: 500,
                     color: "#3f542b",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
-                    gap: "4px",
+                    gap: "5px",
                   }}
                 >
-                  <FolderOpen size={13} />
+                  <FolderOpen size={14} />
                   <span>Open folder</span>
                 </button>
               )}
@@ -310,17 +310,17 @@ export function ResumeDropzone({
                   background: "#ffffff",
                   border: "1px solid #c9d6be",
                   borderRadius: "6px",
-                  padding: "4px 8px",
-                  fontSize: "11px",
+                  padding: "5px 10px",
+                  fontSize: "12.5px",
                   fontWeight: 500,
                   color: "#3f542b",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "5px",
                 }}
               >
-                <Upload size={13} />
+                <Upload size={14} />
                 <span>Replace</span>
               </button>
 
@@ -333,7 +333,7 @@ export function ResumeDropzone({
                   background: "transparent",
                   border: "none",
                   borderRadius: "6px",
-                  padding: "4px",
+                  padding: "5px",
                   color: "#8a9a7d",
                   cursor: "pointer",
                   display: "flex",
@@ -349,11 +349,11 @@ export function ResumeDropzone({
           {staged && !value && (
             <div
               style={{
-                fontSize: "10.5px",
+                fontSize: "12px",
                 color: "#5b6e49",
                 background: "#eaf0e4",
-                padding: "4px 8px",
-                borderRadius: "4px",
+                padding: "4px 9px",
+                borderRadius: "5px",
                 display: "flex",
                 alignItems: "center",
                 gap: "6px",
@@ -401,11 +401,11 @@ export function ResumeDropzone({
             <Upload size={20} />
           </div>
 
-          <div style={{ fontSize: "13px", fontWeight: 600, color: "#364728" }}>
+          <div style={{ fontSize: "14.5px", fontWeight: 600, color: "#364728" }}>
             Drop your resume here, or <span style={{ color: "#4f7236", textDecoration: "underline" }}>browse</span>
           </div>
 
-          <div style={{ fontSize: "11px", color: "#748666" }}>
+          <div style={{ fontSize: "12.5px", color: "#6d7f5e" }}>
             Supports PDF, DOCX, DOC, or TXT
           </div>
 
@@ -413,10 +413,10 @@ export function ResumeDropzone({
             <div
               style={{
                 marginTop: "4px",
-                fontSize: "10.5px",
-                color: "#6c805a",
+                fontSize: "12px",
+                color: "#5b6e4a",
                 background: "#edf3e7",
-                padding: "3px 10px",
+                padding: "4px 11px",
                 borderRadius: "12px",
                 maxWidth: "100%",
                 overflow: "hidden",
@@ -425,14 +425,14 @@ export function ResumeDropzone({
               }}
               title={`Saved into: ${displayFolder}`}
             >
-              Target folder: <strong>{displayFolder}</strong>
+              Target folder: <strong style={{ fontWeight: 600 }}>{displayFolder}</strong>
             </div>
           )}
         </div>
       )}
 
       {error && (
-        <div style={{ fontSize: "11px", color: "#c2410c", marginTop: "4px" }}>
+        <div style={{ fontSize: "12.5px", color: "#c2410c", marginTop: "5px" }}>
           {error}
         </div>
       )}

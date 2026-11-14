@@ -15,8 +15,8 @@
   min-height: 100vh;
   color: var(--ink);
   background: #f8faf9;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
-  font-size: 13px;
+  font-family: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }

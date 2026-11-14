@@ -128,8 +128,8 @@ export function SourceSelect({
           placeholder="e.g. Campus placement, Discord, Event..."
           aria-label="Custom application source"
           style={{
-            fontSize: "12px",
-            padding: "8px 10px",
+            fontSize: "14px",
+            padding: "9px 12px",
           }}
         />
       )}

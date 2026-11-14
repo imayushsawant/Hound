@@ -1688,7 +1688,7 @@ function ApplicationsTable({
               display: "inline-flex",
               alignItems: "center",
               gap: "6px",
-              fontSize: "11px",
+              fontSize: "13px",
               color: "#747d68",
               cursor: "pointer",
               userSelect: "none",
@@ -2261,7 +2261,7 @@ function ApplicationModal({
               style={{
                 display: "block",
                 marginBottom: "4px",
-                fontSize: "11px",
+                fontSize: "13.5px",
                 fontWeight: 600,
                 color: "#687b55",
               }}
@@ -2292,7 +2292,7 @@ function ApplicationModal({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                fontSize: "11px",
+                fontSize: "13.5px",
                 fontWeight: 600,
                 color: "#6c8452",
                 background: "transparent",
@@ -2508,7 +2508,7 @@ function RoundTopicsInput({
         onBlur={() => {
           if (inputVal.trim()) addTag(inputVal);
         }}
-        style={{ fontSize: "11px", padding: "4px 8px", borderRadius: "5px" }}
+        style={{ fontSize: "13px", padding: "6px 10px", borderRadius: "6px" }}
       />
     </div>
   );
@@ -2735,7 +2735,7 @@ function ApplicationDetail({
         <button
           className="button secondary danger-hover"
           onClick={() => setDeleteConfirm(true)}
-          style={{ fontSize: "12px", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
+          style={{ fontSize: "13.5px", padding: "7px 14px", display: "inline-flex", alignItems: "center", gap: "6px" }}
         >
           <Trash2 size={14} />
           Delete application
@@ -2802,7 +2802,7 @@ function ApplicationDetail({
             )}
           </div>
           <div className="form-grid">
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "11px", fontWeight: 500, color: "#8a9879" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13.5px", fontWeight: 500, color: "#8a9879" }}>
               <span>Company</span>
               <button
                 type="button"
@@ -2812,7 +2812,7 @@ function ApplicationDetail({
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  fontSize: "13px",
+                  fontSize: "15px",
                   fontWeight: 600,
                   marginTop: "4px",
                 }}
@@ -2948,7 +2948,7 @@ function ApplicationDetail({
                 style={{
                   display: "block",
                   marginBottom: "4px",
-                  fontSize: "11px",
+                  fontSize: "13.5px",
                   fontWeight: 600,
                   color: "#687b55",
                 }}
@@ -2996,12 +2996,12 @@ function ApplicationDetail({
             {/* Next action field with override and auto badge */}
             <div className="full-width" style={{ marginTop: "4px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                <span style={{ fontSize: "11px", fontWeight: 600, color: "#687b55", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#687b55", display: "flex", alignItems: "center", gap: "6px" }}>
                   Next action
                   {derivedNext.isAuto ? (
                     <span
                       style={{
-                        fontSize: "10px",
+                        fontSize: "12px",
                         color: "#7e8f6e",
                         background: "#eaf0e3",
                         padding: "1px 6px",
@@ -3014,7 +3014,7 @@ function ApplicationDetail({
                   ) : (
                     <span
                       style={{
-                        fontSize: "10px",
+                        fontSize: "12px",
                         color: "#c07a4e",
                         background: "#faede5",
                         padding: "1px 6px",
@@ -3030,7 +3030,7 @@ function ApplicationDetail({
                   <button
                     type="button"
                     className="text-link"
-                    style={{ fontSize: "11px", color: "#b35e46", cursor: "pointer" }}
+                    style={{ fontSize: "12.5px", color: "#b35e46", cursor: "pointer" }}
                     onClick={() => {
                       setNextActionOverride("");
                       onUpdate({ nextActionOverride: "" });
@@ -3053,7 +3053,7 @@ function ApplicationDetail({
                 }}
                 style={{ width: "100%" }}
               />
-              <span className="muted small" style={{ fontSize: "10px", marginTop: "4px", display: "block" }}>
+              <span className="muted small" style={{ fontSize: "12.5px", marginTop: "4px", display: "block" }}>
                 {nextActionOverride
                   ? "Manual override active. Click 'Clear override' to fall back to automatic derivation."
                   : `Automatically derived from rounds and timeline (${derivedNext.text || "none"}). Typing here sets an override.`}
@@ -3086,34 +3086,34 @@ function ApplicationDetail({
 
           {/* Quick Add Round Bar */}
           <div className="round-add-bar">
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#687b55" }}>
               Round type
               <select
                 value={newRoundType}
                 onChange={(e) => setNewRoundType(e.target.value)}
-                style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px" }}
+                style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "13.5px" }}
               >
                 {roundTypes.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#687b55" }}>
               Scheduled date (optional)
               <input
                 type="datetime-local"
                 value={newRoundDate}
                 onChange={(e) => setNewRoundDate(e.target.value)}
-                style={{ padding: "5px 10px", borderRadius: "6px", fontSize: "12px" }}
+                style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "13.5px" }}
               />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11px", fontWeight: 500, color: "#687b55", flex: "1 1 200px" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#687b55", flex: "1 1 200px" }}>
               Next action (optional)
               <input
                 value={newRoundAction}
                 onChange={(e) => setNewRoundAction(e.target.value)}
                 placeholder="e.g. Review system design patterns"
-                style={{ padding: "6px 10px", borderRadius: "6px", fontSize: "12px" }}
+                style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "13.5px" }}
               />
             </label>
             <button
@@ -3158,7 +3158,7 @@ function ApplicationDetail({
                             onClick={() => handleReorder(index, index - 1)}
                             title="Move up"
                             aria-label="Move up"
-                            style={{ opacity: index === 0 ? 0.3 : 1, padding: "1px 4px", fontSize: "9px", height: "auto" }}
+                            style={{ opacity: index === 0 ? 0.3 : 1, padding: "2px 5px", fontSize: "11px", height: "auto" }}
                           >
                             ▲
                           </button>
@@ -3169,26 +3169,27 @@ function ApplicationDetail({
                             onClick={() => handleReorder(index, index + 1)}
                             title="Move down"
                             aria-label="Move down"
-                            style={{ opacity: index === sortedRounds.length - 1 ? 0.3 : 1, padding: "1px 4px", fontSize: "9px", height: "auto" }}
+                            style={{ opacity: index === sortedRounds.length - 1 ? 0.3 : 1, padding: "2px 5px", fontSize: "11px", height: "auto" }}
                           >
                             ▼
                           </button>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#8a9879" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 700, color: "#8a9879" }}>
                             #{index + 1}
                           </span>
                           <input
                             value={r.title !== undefined && r.title !== null && r.title !== "" ? r.title : r.type}
                             onChange={(e) => handleUpdateRound(r.id, { title: e.target.value })}
                             style={{
-                              fontSize: "13px",
-                              fontWeight: 600,
+                              fontSize: "15px",
+                              fontWeight: 650,
                               color: "#4f5f41",
                               border: "1px solid transparent",
                               background: "transparent",
                               padding: "2px 6px",
                               borderRadius: "4px",
+                              fontFamily: "var(--font-sans)",
                             }}
                             onFocus={(e) => (e.target.style.border = "1px solid #ccd6c0")}
                             onBlur={(e) => (e.target.style.border = "1px solid transparent")}
@@ -3206,8 +3207,8 @@ function ApplicationDetail({
                           value={r.status ? r.status.toLowerCase() : "upcoming"}
                           onChange={(e) => handleUpdateRound(r.id, { status: e.target.value as any })}
                           style={{
-                            fontSize: "11px",
-                            padding: "3px 8px",
+                            fontSize: "12.5px",
+                            padding: "4px 9px",
                             borderRadius: "5px",
                             fontWeight: 600,
                             color: r.status?.toLowerCase() === "done" ? "#4f772d" : r.status?.toLowerCase() === "skipped" ? "#8f9986" : "#b06c3a",
@@ -3238,7 +3239,7 @@ function ApplicationDetail({
                           type="datetime-local"
                           value={r.date || ""}
                           onChange={(e) => handleUpdateRound(r.id, { date: e.target.value })}
-                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                          style={{ fontSize: "13px", padding: "6px 10px" }}
                         />
                       </label>
                       <label>
@@ -3247,7 +3248,7 @@ function ApplicationDetail({
                           value={r.nextAction || ""}
                           placeholder="e.g. Practice dynamic programming"
                           onChange={(e) => handleUpdateRound(r.id, { nextAction: e.target.value })}
-                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                          style={{ fontSize: "13px", padding: "6px 10px" }}
                         />
                       </label>
                       <label>
@@ -3256,11 +3257,11 @@ function ApplicationDetail({
                           value={r.resume || ""}
                           placeholder={getResumeDisplayFileName(a.resume) || "Resume filename..."}
                           onChange={(e) => handleUpdateRound(r.id, { resume: e.target.value })}
-                          style={{ fontSize: "11px", padding: "4px 8px" }}
+                          style={{ fontSize: "13px", padding: "6px 10px" }}
                         />
                       </label>
                       <div>
-                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#8a9879", display: "block", marginBottom: "6px" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#8a9879", display: "block", marginBottom: "6px" }}>
                           Notes
                         </span>
                         <div style={{ display: "flex", gap: "8px" }}>
@@ -3268,7 +3269,7 @@ function ApplicationDetail({
                             type="button"
                             className="button secondary small-button"
                             onClick={() => onOpenNotes(r.id, "prep")}
-                            style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                            style={{ fontSize: "13px", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
                           >
                             <FileText size={12} /> Prep notes
                           </button>
@@ -3276,14 +3277,14 @@ function ApplicationDetail({
                             type="button"
                             className="button secondary small-button"
                             onClick={() => onOpenNotes(r.id, "interview")}
-                            style={{ fontSize: "11px", padding: "4px 9px", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                            style={{ fontSize: "13px", padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}
                           >
                             <FileText size={12} /> Interview notes
                           </button>
                         </div>
                       </div>
                       <div className="full-width" style={{ marginTop: "4px" }}>
-                        <span style={{ fontSize: "11px", fontWeight: 500, color: "#8a9879", display: "block", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#8a9879", display: "block", marginBottom: "4px" }}>
                           Technical topics asked
                         </span>
                         <RoundTopicsInput
@@ -3376,10 +3377,10 @@ function ApplicationDetail({
           {/* Technical topics asked (aggregated read-only from all rounds) */}
           <div style={{ marginTop: "16px", borderTop: "1px solid var(--border)", paddingTop: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <h3 style={{ fontSize: "12px", fontWeight: 600, color: "#687b55", margin: 0 }}>
+              <h3 style={{ fontSize: "15px", fontWeight: 700, color: "#687b55", margin: 0, fontFamily: "var(--font-display)" }}>
                 Technical topics asked
               </h3>
-              <span className="muted small" style={{ fontSize: "10px" }}>Aggregated from all rounds (read-only)</span>
+              <span className="muted small" style={{ fontSize: "12.5px" }}>Aggregated from all rounds (read-only)</span>
             </div>
             {aggregatedTopics.length > 0 ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
@@ -3495,15 +3496,16 @@ function CompanyDetail({
                       setNameError("");
                     }}
                     style={{
-                      fontSize: "18px",
+                      fontSize: "20px",
                       fontWeight: 700,
-                      padding: "4px 8px",
+                      padding: "6px 12px",
                       borderRadius: "6px",
                       border: "1px solid #c07a4e",
                       color: "#4a5141",
+                      fontFamily: "var(--font-display)",
                     }}
                   />
-                  <button className="button primary" type="submit" style={{ padding: "5px 10px", fontSize: "11px" }}>
+                  <button className="button primary" type="submit" style={{ padding: "6px 12px", fontSize: "13px" }}>
                     Save
                   </button>
                   <button
@@ -3514,13 +3516,13 @@ function CompanyDetail({
                       setEditingName(false);
                       setNameError("");
                     }}
-                    style={{ padding: "5px 10px", fontSize: "11px" }}
+                    style={{ padding: "6px 12px", fontSize: "13px" }}
                   >
                     Cancel
                   </button>
                 </div>
                 {nameError && (
-                  <span style={{ color: "#d9534f", fontSize: "11px", fontWeight: 500 }}>{nameError}</span>
+                  <span style={{ color: "#d9534f", fontSize: "12.5px", fontWeight: 500 }}>{nameError}</span>
                 )}
               </form>
             ) : (
@@ -4015,9 +4017,9 @@ function Settings({
                 notify(`Preferred country set to ${country}.`);
               }}
               style={{
-                padding: "6px 12px",
+                padding: "8px 14px",
                 borderRadius: "6px",
-                fontSize: "12px",
+                fontSize: "13.5px",
                 width: "auto",
               }}
             >
@@ -4042,9 +4044,9 @@ function Settings({
                 notify(`Follow-up reminder set to ${days} days.`);
               }}
               style={{
-                padding: "6px 12px",
+                padding: "8px 14px",
                 borderRadius: "6px",
-                fontSize: "12px",
+                fontSize: "13.5px",
                 width: "auto",
               }}
             >

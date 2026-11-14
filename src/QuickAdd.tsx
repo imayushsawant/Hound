@@ -104,8 +104,8 @@ export function QuickAdd() {
           }
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <HoundMark size={20} />
-            <span style={{ fontSize: "13px", fontWeight: 600 }}>Quick Add Application</span>
+            <HoundMark size={22} />
+            <span style={{ fontSize: "15px", fontWeight: 700 }}>Quick Add Application</span>
           </div>
           <button
             type="button"
@@ -189,8 +189,8 @@ export function QuickAdd() {
         }
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <HoundMark size={20} />
-          <span style={{ fontSize: "13px", fontWeight: 600 }}>Quick Add Application</span>
+          <HoundMark size={22} />
+          <span style={{ fontSize: "15px", fontWeight: 700 }}>Quick Add Application</span>
         </div>
         <button
           type="button"
@@ -222,10 +222,10 @@ export function QuickAdd() {
           flex: 1,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
           <label
             htmlFor="quick-company"
-            style={{ fontSize: "11px", fontWeight: 600, color: "#627252" }}
+            style={{ fontSize: "13px", fontWeight: 600, color: "#4f603f" }}
           >
             Company
           </label>
@@ -246,10 +246,10 @@ export function QuickAdd() {
           </datalist>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
           <label
             htmlFor="quick-role"
-            style={{ fontSize: "11px", fontWeight: 600, color: "#627252" }}
+            style={{ fontSize: "13px", fontWeight: 600, color: "#4f603f" }}
           >
             Role
           </label>
@@ -263,10 +263,10 @@ export function QuickAdd() {
           />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
           <label
             htmlFor="quick-status"
-            style={{ fontSize: "11px", fontWeight: 600, color: "#627252" }}
+            style={{ fontSize: "13px", fontWeight: 600, color: "#4f603f" }}
           >
             Status
           </label>
@@ -290,11 +290,11 @@ export function QuickAdd() {
             alignItems: "center",
             justifyContent: "space-between",
             marginTop: "auto",
-            paddingTop: "6px",
+            paddingTop: "8px",
           }}
         >
-          <span style={{ fontSize: "11px", color: "#8a9978" }}>
-            Press <kbd style={{ padding: "1px 4px", border: "1px solid #ccd6c0", borderRadius: "3px", fontSize: "10px" }}>Enter</kbd> to save · <kbd style={{ padding: "1px 4px", border: "1px solid #ccd6c0", borderRadius: "3px", fontSize: "10px" }}>Esc</kbd> to close
+          <span style={{ fontSize: "12px", color: "#748665" }}>
+            Press <kbd style={{ padding: "2px 5px", border: "1px solid #ccd6c0", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}>Enter</kbd> to save · <kbd style={{ padding: "2px 5px", border: "1px solid #ccd6c0", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}>Esc</kbd> to close
           </span>
           <button
             type="submit"
@@ -302,19 +302,19 @@ export function QuickAdd() {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "5px",
-              padding: "6px 14px",
+              gap: "6px",
+              padding: "7px 16px",
               borderRadius: "6px",
               border: "none",
               background: "#4f6638",
               color: "#ffffff",
-              fontSize: "12px",
+              fontSize: "13.5px",
               fontWeight: 600,
               cursor: "pointer",
               opacity: submitting || !company.trim() || !role.trim() ? 0.6 : 1,
             }}
           >
-            <Check size={14} />
+            <Check size={15} />
             {submitting ? "Saving..." : "Save"}
           </button>
         </div>

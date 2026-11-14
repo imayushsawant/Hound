@@ -115,8 +115,8 @@ export function NoteEditor({
       "&": {
         height: "100%",
         minHeight: "520px",
-        fontSize: "15px",
-        fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontSize: "16px",
+        fontFamily: "'Inter Variable', 'Inter', 'DM Sans Variable', sans-serif",
         backgroundColor: "transparent",
       },
       ".cm-scroller": {
@@ -287,10 +287,10 @@ export function NoteEditor({
               {round.status || "upcoming"}
             </span>
           </div>
-          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#3e4834", margin: "4px 0" }}>
+          <h1 style={{ fontSize: "24px", fontWeight: 750, color: "#3e4834", margin: "4px 0", fontFamily: "var(--font-display)" }}>
             {titleDisplay}
           </h1>
-          <p className="muted small" style={{ margin: "2px 0 0" }}>
+          <p className="muted small" style={{ margin: "2px 0 0", fontSize: "13.5px" }}>
             {type === "prep"
               ? "Key topics, questions to ask, and strategic talking points."
               : "Questions asked, evaluation notes, and interview reflections."}
@@ -304,7 +304,7 @@ export function NoteEditor({
               <Check size={13} /> Saved
             </span>
           ) : (
-            <span className="muted small" style={{ fontStyle: "italic", fontSize: "11px" }}>
+            <span className="muted small" style={{ fontStyle: "italic", fontSize: "12.5px" }}>
               Saving...
             </span>
           )}
@@ -315,15 +315,15 @@ export function NoteEditor({
             className="button secondary"
             onClick={togglePreview}
             title="Toggle Edit / Rendered Preview (Ctrl+E)"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "6px 12px" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px", padding: "7px 14px" }}
           >
             {isPreview ? (
               <>
-                <Edit3 size={14} /> Edit (Ctrl+E)
+                <Edit3 size={15} /> Edit (Ctrl+E)
               </>
             ) : (
               <>
-                <Eye size={14} /> Preview (Ctrl+E)
+                <Eye size={15} /> Preview (Ctrl+E)
               </>
             )}
           </button>
@@ -334,9 +334,9 @@ export function NoteEditor({
             className="button secondary"
             onClick={handleExport}
             title="Download plain markdown file"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", padding: "6px 12px" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "13.5px", padding: "7px 14px" }}
           >
-            <Download size={14} /> Export as .md
+            <Download size={15} /> Export as .md
           </button>
         </div>
       </header>
@@ -432,14 +432,14 @@ export function NoteEditor({
       </div>
 
       <footer style={{ marginTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span className="muted small" style={{ fontSize: "11px" }}>
+        <span className="muted small" style={{ fontSize: "12.5px" }}>
           Markdown format · Tab indents lists · Pasted URLs auto-link · Ctrl+E toggles preview
         </span>
         <button
           type="button"
           className="text-link"
           onClick={onBack}
-          style={{ fontSize: "12px", color: "#687b55" }}
+          style={{ fontSize: "13.5px", color: "#687b55" }}
         >
           Return to application
         </button>

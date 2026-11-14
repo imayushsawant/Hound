@@ -91,8 +91,8 @@ export function LocationSelector({
           onChange={handleCustomChange}
           onBlur={onBlur}
           style={{
-            fontSize: "12px",
-            padding: "7px 11px",
+            fontSize: "14px",
+            padding: "9px 12px",
             borderRadius: "6px",
             animation: "fadeIn 0.15s ease",
           }}
