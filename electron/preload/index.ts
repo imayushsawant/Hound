@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import {
   channels,
   type NudgeAPI,
@@ -11,6 +11,7 @@ import {
   type CreateBoardInput,
   type UpdateBoardInput,
 } from "../../src/shared/api";
+import type { SaveResumeInput } from "../../src/desktop";
 
 const api: NudgeAPI = {
   getAppInfo: () => ipcRenderer.invoke(channels.appInfo),
@@ -76,4 +77,18 @@ contextBridge.exposeInMainWorld("houndDesktop", {
   },
   closeQuickAdd: () => ipcRenderer.send("quick-add:close"),
   openDataFolder: () => ipcRenderer.invoke("desktop:open-data-folder"),
+  selectResumeFile: () => ipcRenderer.invoke("desktop:select-resume-file"),
+  saveResumeFile: (input: SaveResumeInput) => ipcRenderer.invoke("desktop:save-resume-file", input),
+  openResumesFolder: () => ipcRenderer.invoke("desktop:open-resumes-folder"),
+  openPath: (targetPath: string) => ipcRenderer.invoke("desktop:open-path", targetPath),
+  showItemInFolder: (targetPath: string) =>
+    ipcRenderer.invoke("desktop:show-item-in-folder", targetPath),
+  getResumesPath: () => ipcRenderer.invoke("desktop:get-resumes-path"),
+  getPathForFile: (file: File) => {
+    try {
+      return webUtils.getPathForFile(file);
+    } catch {
+      return (file as any)?.path || "";
+    }
+  },
 });

@@ -11,11 +11,17 @@ import {
   shell,
   Tray,
 } from "electron";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { channels, type AppInfo } from "../../src/shared/api";
 import { Repository } from "./db/repository";
 import { registerDataIpcHandlers } from "./ipc";
+import {
+  getResumesRootDir,
+  resolveSafeResumePath,
+  saveResumeFile,
+  type SaveResumeInput,
+} from "./resumes";
 import { Scheduler } from "./scheduler";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -219,6 +225,59 @@ if (!gotLock) {
       trusted(event);
       void shell.openPath(app.getPath("userData"));
       return true;
+    });
+    ipcMain.handle("desktop:select-resume-file", async (event) => {
+      trusted(event);
+      const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+      const result = await dialog.showOpenDialog(win!, {
+        title: "Select Resume",
+        buttonLabel: "Select Resume",
+        properties: ["openFile"],
+        filters: [
+          { name: "Resumes & Documents", extensions: ["pdf", "docx", "doc", "txt", "rtf"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+      });
+      if (result.canceled || !result.filePaths.length) {
+        return null;
+      }
+      const filePath = result.filePaths[0];
+      return {
+        filePath,
+        fileName: basename(filePath),
+      };
+    });
+    ipcMain.handle("desktop:save-resume-file", (event, input: SaveResumeInput) => {
+      trusted(event);
+      return saveResumeFile(app.getPath("userData"), input);
+    });
+    ipcMain.handle("desktop:open-resumes-folder", (event) => {
+      trusted(event);
+      const root = getResumesRootDir(app.getPath("userData"));
+      void shell.openPath(root);
+      return root;
+    });
+    ipcMain.handle("desktop:open-path", (event, targetPath: string) => {
+      trusted(event);
+      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath);
+      if (safe) {
+        void shell.openPath(safe);
+        return true;
+      }
+      return false;
+    });
+    ipcMain.handle("desktop:show-item-in-folder", (event, targetPath: string) => {
+      trusted(event);
+      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath);
+      if (safe) {
+        shell.showItemInFolder(safe);
+        return true;
+      }
+      return false;
+    });
+    ipcMain.handle("desktop:get-resumes-path", (event) => {
+      trusted(event);
+      return getResumesRootDir(app.getPath("userData"));
     });
     void repository.performDailyBackup();
     createWindow();
