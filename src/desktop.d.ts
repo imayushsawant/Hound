@@ -61,7 +61,9 @@ declare global {
       openResumesFolder?: () => Promise<string>;
       openPath?: (path: string) => Promise<boolean>;
       showItemInFolder?: (path: string) => Promise<boolean>;
-      getResumesPath?: () => Promise<string>;
+      getResumesPath?: () => Promise<ResumesPathInfo>;
+      selectResumesFolder?: () => Promise<string | null>;
+      setResumesPath?: (newPath: string | null, copyExisting?: boolean) => Promise<ResumesPathInfo>;
       getPathForFile?: (file: File) => string;
       checkUpdate?: () => Promise<UpdateInfo>;
       openExternal?: (url: string) => Promise<boolean>;
