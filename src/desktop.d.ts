@@ -23,6 +23,12 @@ export interface SaveResumeResult {
   error?: string;
 }
 
+export interface ResumesPathInfo {
+  currentPath: string;
+  defaultPath: string;
+  isCustom: boolean;
+}
+
 export interface UpdateInfo {
   updateAvailable: boolean;
   currentVersion: string;

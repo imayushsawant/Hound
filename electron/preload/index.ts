@@ -86,6 +86,9 @@ contextBridge.exposeInMainWorld("houndDesktop", {
   showItemInFolder: (targetPath: string) =>
     ipcRenderer.invoke("desktop:show-item-in-folder", targetPath),
   getResumesPath: () => ipcRenderer.invoke("desktop:get-resumes-path"),
+  selectResumesFolder: () => ipcRenderer.invoke("desktop:select-resumes-folder"),
+  setResumesPath: (newPath: string | null, copyExisting?: boolean) =>
+    ipcRenderer.invoke("desktop:set-resumes-path", newPath, copyExisting),
   getPathForFile: (file: File) => {
     try {
       return webUtils.getPathForFile(file);

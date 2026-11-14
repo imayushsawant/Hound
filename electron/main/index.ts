@@ -208,8 +208,11 @@ if (!gotLock) {
       trusted(event);
       return repository!.loadWorkspace();
     });
-    ipcMain.handle("workspace:save", (event, data: unknown) => {
+    ipcMain.handle("workspace:save", (event, data: any) => {
       trusted(event);
+      if (data?.settings?.resumesPath !== undefined) {
+        currentCustomResumesPath = data.settings.resumesPath || null;
+      }
       return repository!.saveWorkspace(data);
     });
     ipcMain.handle("desktop:login", (event, enabled: boolean) => {
@@ -275,17 +278,17 @@ if (!gotLock) {
     });
     ipcMain.handle("desktop:save-resume-file", (event, input: SaveResumeInput) => {
       trusted(event);
-      return saveResumeFile(app.getPath("userData"), input);
+      return saveResumeFile(app.getPath("userData"), input, currentCustomResumesPath);
     });
     ipcMain.handle("desktop:open-resumes-folder", (event) => {
       trusted(event);
-      const root = getResumesRootDir(app.getPath("userData"));
+      const root = getResumesRootDir(app.getPath("userData"), currentCustomResumesPath);
       void shell.openPath(root);
       return root;
     });
     ipcMain.handle("desktop:open-path", (event, targetPath: string) => {
       trusted(event);
-      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath);
+      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath, currentCustomResumesPath);
       if (safe) {
         void shell.openPath(safe);
         return true;
@@ -294,7 +297,7 @@ if (!gotLock) {
     });
     ipcMain.handle("desktop:show-item-in-folder", (event, targetPath: string) => {
       trusted(event);
-      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath);
+      const safe = resolveSafeResumePath(app.getPath("userData"), targetPath, currentCustomResumesPath);
       if (safe) {
         shell.showItemInFolder(safe);
         return true;
@@ -303,8 +306,56 @@ if (!gotLock) {
     });
     ipcMain.handle("desktop:get-resumes-path", (event) => {
       trusted(event);
-      return getResumesRootDir(app.getPath("userData"));
+      return getResumesPathInfo(app.getPath("userData"), currentCustomResumesPath);
     });
+    ipcMain.handle("desktop:select-resumes-folder", async (event) => {
+      trusted(event);
+      const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+      const result = await dialog.showOpenDialog(win!, {
+        title: "Choose Resumes Folder",
+        buttonLabel: "Select Folder",
+        properties: ["openDirectory", "createDirectory"],
+      });
+      if (result.canceled || !result.filePaths.length) {
+        return null;
+      }
+      return result.filePaths[0];
+    });
+    ipcMain.handle(
+      "desktop:set-resumes-path",
+      async (event, newPath: string | null, copyExisting: boolean = false) => {
+        trusted(event);
+        const defaultPath = getDefaultResumesRootDir(app.getPath("userData"));
+        const prevPath = getResumesRootDir(app.getPath("userData"), currentCustomResumesPath);
+        const normalizedNew =
+          newPath && resolve(newPath) !== resolve(defaultPath) ? resolve(newPath) : null;
+
+        if (normalizedNew) {
+          mkdirSync(normalizedNew, { recursive: true });
+          if (copyExisting) {
+            copyResumesDirectory(prevPath, normalizedNew);
+          }
+        } else if (copyExisting && currentCustomResumesPath) {
+          copyResumesDirectory(prevPath, defaultPath);
+        }
+
+        currentCustomResumesPath = normalizedNew;
+
+        // Persist into workspace settings in repository
+        try {
+          const workspace = repository!.loadWorkspace();
+          workspace.settings = {
+            ...workspace.settings,
+            resumesPath: normalizedNew || undefined,
+          };
+          repository!.saveWorkspace(workspace);
+        } catch (err) {
+          console.error("Failed to persist custom resumesPath into workspace", err);
+        }
+
+        return getResumesPathInfo(app.getPath("userData"), currentCustomResumesPath);
+      },
+    );
     ipcMain.handle("desktop:check-update", async (event) => {
       trusted(event);
       return checkForUpdate(app.getVersion());
