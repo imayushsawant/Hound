@@ -1300,6 +1300,12 @@ function App() {
             </span>
           </div>
           <div className="shortcut-row">
+            <span>Toggle sidebar</span>
+            <span>
+              <kbd>Ctrl</kbd> + <kbd>B</kbd>
+            </span>
+          </div>
+          <div className="shortcut-row">
             <span>Toggle notes edit / preview</span>
             <span>
               <kbd>Ctrl</kbd> + <kbd>E</kbd>
