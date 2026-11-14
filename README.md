@@ -141,10 +141,11 @@ Hound performs an automated SQLite snapshot on startup and during regular 15-min
 ### Resume Storage & Organization
 
 When creating or updating an application, you can drop or select the specific resume used for that role. Hound automatically organizes resumes into nested backend folders accessible outside the application:
-- **Location**: `<userData>/resumes/<Company>/application-<role>-<date>/<resume-file>`
+- **Default Location**: `<userData>/resumes/<Company>/application-<role>-<date>/<resume-file>`
   - e.g. `%APPDATA%\Hound\resumes\Stripe\application-software-development-intern-2026-11-14\Resume.pdf`
+- **Customizable in Settings**: Under **Settings** → **Resumes directory**, you can view your current path and click **Change folder...** to choose any folder on your computer (with an option to copy existing resumes over), or click **Reset to default** at any time.
 - **Multiple Applications**: Multiple roles applied to the same company will each have their own nested folder and resume inside that company's folder.
-- **Direct Access**: Open the resumes directory from **Settings** → **Open resumes folder**, or click **Resumes folder** on any company's detail page, or click **Open folder** / **Open file** directly on an application's resume card.
+- **Direct Access**: Open the resumes directory from **Settings** → **Open folder**, or click **Resumes folder** on any company's detail page, or click **Open folder** / **Open file** directly on an application's resume card.
 
 ---
 
