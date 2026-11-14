@@ -135,3 +135,44 @@ test("saveResumeFile creates nested folders and saves resume file", () => {
     rmSync(tempDir, { recursive: true, force: true });
   }
 });
+
+test("user scenario: Stripe company with Software Development Intern application resume nested folder", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "hound-stripe-scenario-"));
+  try {
+    const resumeData = Buffer.from("My Software Development Intern Resume");
+    const result = saveResumeFile(tempDir, {
+      companyName: "Stripe",
+      role: "software development intern",
+      date: "2026-11-14",
+      fileName: "Software_Dev_Intern_Resume.pdf",
+      fileBuffer: resumeData,
+    });
+
+    assert.equal(
+      result.relativePath,
+      "Stripe/application-software-development-intern-2026-11-14/Software_Dev_Intern_Resume.pdf",
+    );
+    assert.equal(existsSync(result.fullPath), true);
+    assert.equal(
+      result.folderPath,
+      join(tempDir, "resumes", "Stripe", "application-software-development-intern-2026-11-14"),
+    );
+
+    // Another application for Stripe:
+    const result2 = saveResumeFile(tempDir, {
+      companyName: "Stripe",
+      role: "Site Reliability Engineer",
+      date: "2026-11-14",
+      fileName: "SRE_Resume.pdf",
+      fileBuffer: Buffer.from("SRE Resume"),
+    });
+
+    assert.equal(
+      result2.relativePath,
+      "Stripe/application-site-reliability-engineer-2026-11-14/SRE_Resume.pdf",
+    );
+    assert.equal(existsSync(result2.fullPath), true);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});

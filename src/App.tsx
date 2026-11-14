@@ -83,6 +83,12 @@ import { QuickAdd } from "./QuickAdd";
 import { COUNTRIES } from "./locations";
 import { LocationSelector } from "./LocationSelector";
 import { SourceSelect } from "./SourceSelect";
+import { ResumeDropzone, type StagedResume } from "./ResumeDropzone";
+import {
+  buildApplicationFolderName,
+  getResumeDisplayFileName,
+  sanitizeFolderName,
+} from "./shared/resumes";
 
 type Page = "Overview" | "Applications" | "Companies" | "Job boards" | "Reminders" | "Settings";
 type Modal = "application" | "board" | "help" | null;
@@ -2031,44 +2037,76 @@ function ApplicationModal({
   const [mode, setMode] = useState("Full-time");
   const [applied, setApplied] = useState(isoDate());
   const [resume, setResume] = useState("");
+  const [stagedResume, setStagedResume] = useState<StagedResume | null>(null);
   const [action, setAction] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim() || !role.trim()) return;
-    const existing = companies.find(
-      (c) => c.name.trim().toLowerCase() === companyName.trim().toLowerCase(),
-    );
-    const company: Company = existing || {
-      id: uid(),
-      name: companyName.trim(),
-      domain: url ? new URL(url).hostname : "",
-      color: ["#6962dd", "#dd7949", "#438d76", "#3c7cc2"][companies.length % 4],
-      description: "",
-      notes: "",
-    };
-    onSave(
-      {
+    if (!companyName.trim() || !role.trim() || saving) return;
+    setSaving(true);
+
+    try {
+      let finalResume = resume;
+      if (stagedResume) {
+        if (window.houndDesktop?.saveResumeFile) {
+          try {
+            const saved = await window.houndDesktop.saveResumeFile({
+              companyName: companyName.trim(),
+              role: role.trim(),
+              date: applied || isoDate(),
+              sourcePath: stagedResume.filePath,
+              fileName: stagedResume.fileName,
+              fileBuffer: stagedResume.buffer,
+            });
+            if (saved?.success) {
+              finalResume = saved.relativePath;
+            }
+          } catch (err) {
+            console.error("Failed to save resume file to nested folder:", err);
+            finalResume = stagedResume.fileName;
+          }
+        } else {
+          finalResume = `${sanitizeFolderName(companyName.trim())}/${buildApplicationFolderName(role.trim(), applied)}/${stagedResume.fileName}`;
+        }
+      }
+
+      const existing = companies.find(
+        (c) => c.name.trim().toLowerCase() === companyName.trim().toLowerCase(),
+      );
+      const company: Company = existing || {
         id: uid(),
-        companyId: company.id,
-        role: role.trim(),
-        location,
-        mode,
-        source,
-        stage,
-        applied: applied || isoDate(),
-        updated: isoDate(),
-        url,
-        resume,
-        nextAction: action,
-        rounds: [],
-        offer: "",
-        joining: "",
-        rejection: "",
-        topics: "",
-      },
-      existing ? undefined : company,
-    );
+        name: companyName.trim(),
+        domain: url ? new URL(url).hostname : "",
+        color: ["#6962dd", "#dd7949", "#438d76", "#3c7cc2"][companies.length % 4],
+        description: "",
+        notes: "",
+      };
+      onSave(
+        {
+          id: uid(),
+          companyId: company.id,
+          role: role.trim(),
+          location,
+          mode,
+          source,
+          stage,
+          applied: applied || isoDate(),
+          updated: isoDate(),
+          url,
+          resume: finalResume,
+          nextAction: action,
+          rounds: [],
+          offer: "",
+          joining: "",
+          rejection: "",
+          topics: "",
+        },
+        existing ? undefined : company,
+      );
+    } finally {
+      setSaving(false);
+    }
   };
   return (
     <ModalFrame
@@ -2112,6 +2150,33 @@ function ApplicationModal({
               ))}
             </select>
           </label>
+
+          <div className="full-width" style={{ marginTop: "2px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "4px",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#687b55",
+              }}
+            >
+              Resume for this role <span className="optional">Optional</span>
+            </label>
+            <ResumeDropzone
+              companyName={companyName}
+              role={role}
+              date={applied}
+              value={resume}
+              staged={stagedResume}
+              onStageChange={setStagedResume}
+              onClearValue={() => {
+                setResume("");
+                setStagedResume(null);
+              }}
+              disabled={saving}
+            />
+          </div>
 
           <div className="full-width" style={{ marginTop: "4px" }}>
             <button
@@ -2185,14 +2250,6 @@ function ApplicationModal({
                 />
               </label>
               <label className="full-width">
-                Resume used
-                <input
-                  placeholder="e.g. Resume_Frontend.pdf"
-                  value={resume}
-                  onChange={(e) => setResume(e.target.value)}
-                />
-              </label>
-              <label className="full-width">
                 Next action <span className="optional">Optional</span>
                 <input
                   placeholder="Leave blank to let Hound work it out"
@@ -2210,12 +2267,12 @@ function ApplicationModal({
             Saved only on this device
           </span>
           <div>
-            <button type="button" className="button secondary" onClick={onClose}>
+            <button type="button" className="button secondary" onClick={onClose} disabled={saving}>
               Cancel
             </button>
-            <button className="button primary" type="submit">
+            <button className="button primary" type="submit" disabled={saving}>
               <Plus size={15} />
-              Add application
+              {saving ? "Saving..." : "Add application"}
             </button>
           </div>
         </div>
@@ -2781,15 +2838,55 @@ function ApplicationDetail({
               </select>
             </label>
 
-            <label>
-              Resume used
-              <input
+            <div className="full-width" style={{ marginTop: "4px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "4px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#687b55",
+                }}
+              >
+                Resume for this role
+              </label>
+              <ResumeDropzone
+                companyName={company.name}
+                role={a.role}
+                date={applied}
                 value={resume}
-                onChange={(e) => setResume(e.target.value)}
-                onBlur={() => handleOverviewBlur("resume", resume, a.resume)}
-                placeholder="e.g. Resume_SWE_2026.pdf"
+                onSaveImmediate={async (staged) => {
+                  let finalPath = staged.fileName;
+                  if (window.houndDesktop?.saveResumeFile) {
+                    try {
+                      const saved = await window.houndDesktop.saveResumeFile({
+                        companyName: company.name,
+                        role: a.role,
+                        date: applied || isoDate(),
+                        sourcePath: staged.filePath,
+                        fileName: staged.fileName,
+                        fileBuffer: staged.buffer,
+                      });
+                      if (saved?.success) {
+                        finalPath = saved.relativePath;
+                      }
+                    } catch (err) {
+                      console.error("Failed to save resume file:", err);
+                    }
+                  } else {
+                    finalPath = `${sanitizeFolderName(company.name)}/${buildApplicationFolderName(a.role, applied)}/${staged.fileName}`;
+                  }
+                  setResume(finalPath);
+                  onUpdate({ resume: finalPath });
+                  triggerOverviewSaved();
+                }}
+                onClearValue={() => {
+                  setResume("");
+                  onUpdate({ resume: "" });
+                  triggerOverviewSaved();
+                }}
               />
-            </label>
+            </div>
 
             {/* Next action field with override and auto badge */}
             <div className="full-width" style={{ marginTop: "4px" }}>
@@ -3052,7 +3149,7 @@ function ApplicationDetail({
                         Resume used
                         <input
                           value={r.resume || ""}
-                          placeholder={a.resume || "Resume filename..."}
+                          placeholder={getResumeDisplayFileName(a.resume) || "Resume filename..."}
                           onChange={(e) => handleUpdateRound(r.id, { resume: e.target.value })}
                           style={{ fontSize: "11px", padding: "4px 8px" }}
                         />
@@ -3347,10 +3444,27 @@ function CompanyDetail({
             )}
           </div>
         </div>
-        <button className="button primary" onClick={onAdd}>
-          <Plus size={15} />
-          Add application
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {window.houndDesktop?.openPath && (
+            <button
+              className="button secondary"
+              onClick={() => {
+                const companyFolder = sanitizeFolderName(company.name);
+                if (window.houndDesktop?.openPath) {
+                  window.houndDesktop.openPath(companyFolder);
+                }
+              }}
+              title="Open this company's resumes folder in File Explorer"
+            >
+              <FolderOpen size={15} />
+              Resumes folder
+            </button>
+          )}
+          <button className="button primary" onClick={onAdd}>
+            <Plus size={15} />
+            Add application
+          </button>
+        </div>
       </div>
 
       <div className="company-detail-grid">
@@ -3924,6 +4038,25 @@ function Settings({
             >
               <FolderOpen size={15} />
               Open data folder
+            </button>
+          </div>
+          <div className="settings-row">
+            <div>
+              <h3>Resumes directory</h3>
+              <p>Nested company folders with all resumes used across your applications.</p>
+            </div>
+            <button
+              className="button secondary"
+              onClick={() => {
+                if (window.houndDesktop?.openResumesFolder) {
+                  window.houndDesktop.openResumesFolder();
+                } else {
+                  notify("Resumes folder access is available in the desktop app.", true);
+                }
+              }}
+            >
+              <FolderOpen size={15} />
+              Open resumes folder
             </button>
           </div>
           <div className="settings-row">
