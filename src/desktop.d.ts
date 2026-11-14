@@ -37,6 +37,7 @@ declare global {
       onDataChanged: (callback: () => void) => () => void;
       onNavigateRoute?: (callback: (route: string) => void) => () => void;
       closeQuickAdd?: () => void;
+      openQuickAddDetails?: (applicationId: number | string) => void;
       openDataFolder?: () => Promise<boolean>;
       selectResumeFile?: () => Promise<SelectedResumeFile | null>;
       saveResumeFile?: (input: SaveResumeInput) => Promise<SaveResumeResult>;

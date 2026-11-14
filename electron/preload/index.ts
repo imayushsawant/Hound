@@ -76,6 +76,8 @@ contextBridge.exposeInMainWorld("houndDesktop", {
     return () => ipcRenderer.removeListener("navigate:route", handler);
   },
   closeQuickAdd: () => ipcRenderer.send("quick-add:close"),
+  openQuickAddDetails: (applicationId: number | string) =>
+    ipcRenderer.send("quick-add:open-details", applicationId),
   openDataFolder: () => ipcRenderer.invoke("desktop:open-data-folder"),
   selectResumeFile: () => ipcRenderer.invoke("desktop:select-resume-file"),
   saveResumeFile: (input: SaveResumeInput) => ipcRenderer.invoke("desktop:save-resume-file", input),

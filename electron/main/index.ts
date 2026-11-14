@@ -102,7 +102,13 @@ function openQuickAddWindow() {
 function focusApp(route?: string) {
   showWindow();
   if (route && mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send("navigate:route", route);
+    if (mainWindow.webContents.isLoading()) {
+      mainWindow.webContents.once("did-finish-load", () => {
+        mainWindow?.webContents.send("navigate:route", route);
+      });
+    } else {
+      mainWindow.webContents.send("navigate:route", route);
+    }
   }
 }
 
@@ -219,6 +225,17 @@ if (!gotLock) {
       trusted(event);
       if (quickAddWindow && !quickAddWindow.isDestroyed()) {
         quickAddWindow.close();
+      }
+    });
+    ipcMain.on("quick-add:open-details", (event, applicationId: unknown) => {
+      trusted(event);
+      if (quickAddWindow && !quickAddWindow.isDestroyed()) {
+        quickAddWindow.close();
+      }
+      if (applicationId !== undefined && applicationId !== null) {
+        focusApp(`/applications/${String(applicationId)}`);
+      } else {
+        focusApp();
       }
     });
     ipcMain.handle("desktop:open-data-folder", (event) => {
