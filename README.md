@@ -21,8 +21,17 @@ Get the latest official release for Windows (x64):
 1. **Download the installer**: Click [**Hound-Setup-1.1.0.exe**](https://github.com/imayushsawant/Hound/releases/download/v1.1.0/Hound-Setup-1.1.0.exe).
 2. **Run Setup**:
    - Double-click `Hound-Setup-1.1.0.exe`.
-   - **Windows SmartScreen Prompt**: Since Hound is a free and open-source project without a paid commercial enterprise certificate, Windows Defender SmartScreen may display a *"Windows protected your PC"* window.
-   - Click **More info** → **Run anyway** to launch the installer.
+   - **Windows SmartScreen / Unverified Publisher Warning**: Since Hound is a free and open-source project without an expensive corporate code-signing certificate (~$400/year), Windows Defender SmartScreen may display a *"Windows protected your PC"* or *"Unknown Publisher"* prompt.
+   - **If you see "More info"**: Click **More info** → **Run anyway** to launch the installer.
+   - **If Windows 11 blocks it without a "Run anyway" button** (Smart App Control):
+     Windows attaches a "Mark of the Web" tag to internet downloads. You can unblock the installer in seconds using either method:
+     - **PowerShell (Fastest)**: Open PowerShell and run:
+       ```powershell
+       Unblock-File -Path "$HOME\Downloads\Hound-Setup-1.1.0.exe"
+       ```
+       *(Adjust the path if you saved the file in a different folder, then double-click the installer again).*
+     - **File Explorer**: Right-click `Hound-Setup-1.1.0.exe` → **Properties** → check the **☑ Unblock** box at the bottom of the **General** tab → click **Apply** / **OK**, then run the installer.
+   - *(Prefer not installing? You can also download the portable [**Hound-1.1.0-win.zip**](https://github.com/imayushsawant/Hound/releases/download/v1.1.0/Hound-1.1.0-win.zip), extract it, and run `Hound.exe` directly).*
 3. **Follow the Wizard**:
    - Choose your preferred installation directory (defaults to your local programs folder).
    - Let the installer automatically create Desktop and Start Menu shortcuts.
